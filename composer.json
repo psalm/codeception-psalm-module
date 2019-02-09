@@ -1,0 +1,37 @@
+{
+    "name": "weirdan/codeception-psalm-module",
+    "type": "codeception-module",
+    "description": "Provides codeception assertions to be used for Psalm acceptance testing",
+    "keywords": ["psalm", "psalm-plugin", "codeception"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Bruce Weirdan",
+            "email": "weirdan@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Weirdan\\Codeception\\Psalm\\": "src/"
+        }
+    },
+    "require": {
+        "codeception/base": "^2.5",
+        "muglug/package-versions-56": "^1.2",
+        "composer/semver": "^1.4"
+    },
+    "require-dev": {
+        "squizlabs/php_codesniffer": "^3.4",
+        "vimeo/psalm": "^3.0"
+    },
+    "scripts": {
+        "check": [
+            "@cs-check",
+            "@static-analysis",
+	    "@test"
+        ],
+        "cs-check": "phpcs --colors",
+        "static-analysis": "psalm",
+	"test": "codecept run -v"
+    }
+}

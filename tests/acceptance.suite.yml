@@ -1,0 +1,7 @@
+actor: AcceptanceTester
+modules:
+    enabled:
+        - Filesystem
+        - Cli
+        - \Weirdan\Codeception\Psalm\Module
+        - \Weirdan\Codeception\Psalm\Tests\Helper\Acceptance
