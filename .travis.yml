@@ -2,6 +2,8 @@ language: php
 php:
     - 7.3
 before_install:
-    phpenv config-rm xdebug.ini || true
+    - phpenv config-rm xdebug.ini || true
+install:
+    - composer update
 
 script: vendor/bin/codecept run -v
