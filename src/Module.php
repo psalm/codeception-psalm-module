@@ -45,7 +45,10 @@ class Module extends BaseModule
     /** @var array{type:string,message:string}[] */
     public $errors = [];
 
-    public function _beforeSuite($configuration = []): void
+    /**
+     * @return void
+     */
+    public function _beforeSuite($configuration = [])
     {
         $defaultDir = dirname($this->config['default_file']);
         if (file_exists($defaultDir)) {
@@ -59,12 +62,19 @@ class Module extends BaseModule
             throw new TestRuntimeException('Failed to create dir: ' . $defaultDir);
         }
     }
-    public function _before(TestInterface $test): void
+
+    /**
+     * @return void
+     */
+    public function _before(TestInterface $test)
     {
         $this->errors = [];
     }
 
-    public function runPsalmOn(string $filename): void
+    /**
+     * @return void
+     */
+    public function runPsalmOn(string $filename)
     {
         $this->cli()->runShellCommand(
             $this->config['psalm_path']
@@ -90,7 +100,10 @@ class Module extends BaseModule
         $this->debug($this->remainingErrors());
     }
 
-    public function seeThisError(string $type, string $message): void
+    /**
+     * @return void
+     */
+    public function seeThisError(string $type, string $message)
     {
         if (empty($this->errors)) {
             Assert::fail("No errors");
@@ -109,8 +122,10 @@ class Module extends BaseModule
     /**
      * @Then I see no errors
      * @Then I see no other errors
+     *
+     * @return void
      */
-    public function seeNoErrors(): void
+    public function seeNoErrors()
     {
         if (!empty($this->errors)) {
             Assert::fail("There were errors: \n" . $this->remainingErrors());
@@ -136,24 +151,30 @@ class Module extends BaseModule
 
     /**
      * @Given I have the following code preamble :code
+     *
+     * @return void
      */
-    public function haveTheFollowingCodePreamble(string $code): void
+    public function haveTheFollowingCodePreamble(string $code)
     {
         $this->preamble = $code;
     }
 
     /**
      * @When /I run (?:P|p)salm/
+     *
+     * @return void
      */
-    public function runPsalm(): void
+    public function runPsalm()
     {
         $this->runPsalmOn($this->config['default_file']);
     }
 
     /**
      * @Given I have the following code :code
+     *
+     * @return void
      */
-    public function haveTheFollowingCode(string $code): void
+    public function haveTheFollowingCode(string $code)
     {
         $this->fs()->writeToFile(
             $this->config['default_file'],
@@ -163,16 +184,20 @@ class Module extends BaseModule
 
     /**
      * @Given I have some future Psalm that supports this feature :ref
+     *
+     * @return void
      */
-    public function haveSomeFuturePsalmThatSupportsThisFeature(string $ref): void
+    public function haveSomeFuturePsalmThatSupportsThisFeature(string $ref)
     {
         throw new Skip("Future functionality that Psalm has yet to support: $ref");
     }
 
     /**
      * @Given /I have Psalm (newer than|older than) "([0-9.]+)" \(because of "([^"]+)"\)/
+     *
+     * @return void
      */
-    public function havePsalmOfACertainVersionRangeBecauseOf(string $operator, string $version, string $reason): void
+    public function havePsalmOfACertainVersionRangeBecauseOf(string $operator, string $version, string $reason)
     {
         if (!isset(self::$VERSION_OPERATORS[$operator])) {
             throw new TestRuntimeException("Unknown operator: $operator");
@@ -187,8 +212,10 @@ class Module extends BaseModule
 
     /**
      * @Then I see these errors
+     *
+     * @return void
      */
-    public function seeTheseErrors(TableNode $list): void
+    public function seeTheseErrors(TableNode $list)
     {
         /** @psalm-suppress MixedAssignment */
         foreach (array_values($list->getRows()) as $i => $error) {
