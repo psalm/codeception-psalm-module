@@ -18,7 +18,7 @@ use RuntimeException;
 class Module extends BaseModule
 {
     /** @var array<string,string */
-    private const VERSION_OPERATORS = [
+    private static $VERSION_OPERATORS = [
         'newer than' => '>',
         'older than' => '<',
     ];
@@ -174,11 +174,11 @@ class Module extends BaseModule
      */
     public function havePsalmOfACertainVersionRangeBecauseOf(string $operator, string $version, string $reason): void
     {
-        if (!isset(self::VERSION_OPERATORS[$operator])) {
+        if (!isset(self::$VERSION_OPERATORS[$operator])) {
             throw new TestRuntimeException("Unknown operator: $operator");
         }
 
-        $op = (string) self::VERSION_OPERATORS[$operator];
+        $op = (string) self::$VERSION_OPERATORS[$operator];
 
         if (!$this->seePsalmVersionIs($op, $version)) {
             throw new Skip("This scenario requires Psalm $op $version because of $reason");
