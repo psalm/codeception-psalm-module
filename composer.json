@@ -28,10 +28,10 @@
         "check": [
             "@cs-check",
             "@static-analysis",
-	    "@test"
+            "@test"
         ],
         "cs-check": "phpcs --colors",
         "static-analysis": "psalm",
-	"test": "codecept run -v"
+        "test": "codecept run -v"
     }
 }
