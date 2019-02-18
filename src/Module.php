@@ -45,6 +45,7 @@ class Module extends BaseModule
     /** @var array{type:string,message:string}[] */
     public $errors = [];
 
+
     /**
      * @return void
      */
@@ -69,19 +70,22 @@ class Module extends BaseModule
     public function _before(TestInterface $test)
     {
         $this->errors = [];
+        $this->config['psalm_path'] = realpath($this->config['psalm_path']);
     }
 
     /**
+     * @param string[] $options
      * @return void
      */
-    public function runPsalmOn(string $filename)
+    public function runPsalmOn(string $filename, array $options = [])
     {
-        $this->cli()->runShellCommand(
-            $this->config['psalm_path']
+        $options = array_map('escapeshellarg', $options);
+        $cmd = $this->config['psalm_path']
                 . ' --output-format=json '
-                . escapeshellarg($filename),
-            false
-        );
+                . join(' ', $options) . ' '
+                . escapeshellarg($filename);
+        $this->debug('Running: ' . $cmd);
+        $this->cli()->runShellCommand($cmd, false);
         /**
          * @psalm-suppress MixedAssignment
          * @psalm-suppress MissingPropertyType shouldn't be really happening
@@ -160,7 +164,8 @@ class Module extends BaseModule
     }
 
     /**
-     * @When /I run (?:P|p)salm/
+     * @When I run psalm
+     * @When I run Psalm
      *
      * @return void
      */
@@ -168,6 +173,29 @@ class Module extends BaseModule
     {
         $this->runPsalmOn($this->config['default_file']);
     }
+
+    /**
+     * @When I run Psalm with dead code detection
+     *
+     * @return void
+     */
+    public function runPsalmWithDeadCodeDetection()
+    {
+        $this->fs()->amInPath(dirname($this->config['default_file']));
+
+        $this->fs()->writeToFile(
+            'psalm.xml',
+            '<?xml version="1.0"?>
+            <psalm totallyTyped="true">
+                <projectFiles>
+                    <file name="' . basename($this->config['default_file']) .  '"/>
+                </projectFiles>
+            </psalm>
+            '
+        );
+        $this->runPsalmOn('', ['--find-dead-code']);
+    }
+
 
     /**
      * @Given I have the following code :code

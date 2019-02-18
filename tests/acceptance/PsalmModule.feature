@@ -46,3 +46,18 @@ Feature: Psalm module
       """
     When I run Psalm
     Then I see no errors
+
+  Scenario: Running Psalm with dead code detection
+    Given I have the following code
+      """
+      class C {
+        /** @return void */
+        private function m(int $p) {}
+      }
+      """
+    When I run Psalm with dead code detection
+    Then I see these errors
+      | Type         | Message                                     |
+      | UnusedParam  | Param $p is never referenced in this method |
+      | UnusedClass  | Class C is never used                       |
+    And I see no other errors
