@@ -23,6 +23,13 @@ class Module extends BaseModule
         'older than' => '<',
     ];
 
+    const DEFAULT_PSALM_CONFIG = "<?xml version=\"1.0\"?>\n"
+        . "<psalm totallyTyped=\"true\">\n"
+        . "  <projectFiles>\n"
+        . "    <directory name=\".\"/>\n"
+        . "  </projectFiles>\n"
+        . "</psalm>\n";
+
     /**
      * @var ?Cli
      */
@@ -40,10 +47,14 @@ class Module extends BaseModule
     ];
 
     /** @var string */
+    private $psalmConfig = '';
+
+    /** @var string */
     private $preamble = '';
 
     /** @var array{type:string,message:string}[] */
     public $errors = [];
+
 
     /**
      * @return void
@@ -69,19 +80,23 @@ class Module extends BaseModule
     public function _before(TestInterface $test)
     {
         $this->errors = [];
+        $this->config['psalm_path'] = realpath($this->config['psalm_path']);
+        $this->psalmConfig = '';
     }
 
     /**
+     * @param string[] $options
      * @return void
      */
-    public function runPsalmOn(string $filename)
+    public function runPsalmOn(string $filename, array $options = [])
     {
-        $this->cli()->runShellCommand(
-            $this->config['psalm_path']
+        $options = array_map('escapeshellarg', $options);
+        $cmd = $this->config['psalm_path']
                 . ' --output-format=json '
-                . escapeshellarg($filename),
-            false
-        );
+                . join(' ', $options) . ' '
+                . escapeshellarg($filename);
+        $this->debug('Running: ' . $cmd);
+        $this->cli()->runShellCommand($cmd, false);
         /**
          * @psalm-suppress MixedAssignment
          * @psalm-suppress MissingPropertyType shouldn't be really happening
@@ -98,6 +113,22 @@ class Module extends BaseModule
             (array)$errors
         );
         $this->debug($this->remainingErrors());
+    }
+
+    /**
+     * @param string[] $options
+     * @return void
+     */
+    public function runPsalmIn(string $dir, array $options = [])
+    {
+        $pwd = getcwd();
+        $this->fs()->amInPath($dir);
+
+        $config = $this->psalmConfig ?: self::DEFAULT_PSALM_CONFIG;
+        $this->fs()->writeToFile('psalm.xml', $config);
+
+        $this->runPsalmOn('', $options);
+        $this->fs()->amInPath($pwd);
     }
 
     /**
@@ -160,13 +191,34 @@ class Module extends BaseModule
     }
 
     /**
-     * @When /I run (?:P|p)salm/
+     * @When I run psalm
+     * @When I run Psalm
      *
      * @return void
      */
     public function runPsalm()
     {
-        $this->runPsalmOn($this->config['default_file']);
+        $this->runPsalmIn(dirname($this->config['default_file']));
+    }
+
+    /**
+     * @When I run Psalm with dead code detection
+     *
+     * @return void
+     */
+    public function runPsalmWithDeadCodeDetection()
+    {
+        $this->runPsalmIn(dirname($this->config['default_file']), ['--find-dead-code']);
+    }
+
+
+    /**
+     * @Given I have the following config :config
+     * @return void
+     */
+    public function haveTheFollowingConfig(string $config)
+    {
+        $this->psalmConfig = $config;
     }
 
     /**
