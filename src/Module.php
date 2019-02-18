@@ -23,6 +23,13 @@ class Module extends BaseModule
         'older than' => '<',
     ];
 
+    const DEFAULT_PSALM_CONFIG = "<?xml version=\"1.0\"?>\n"
+        . "<psalm totallyTyped=\"true\">\n"
+        . "  <projectFiles>\n"
+        . "    <directory name=\".\"/>\n"
+        . "  </projectFiles>\n"
+        . "</psalm>\n";
+
     /**
      * @var ?Cli
      */
@@ -38,6 +45,9 @@ class Module extends BaseModule
         'psalm_path' => 'vendor/bin/psalm',
         'default_file' => 'tests/_run/somefile.php',
     ];
+
+    /** @var string */
+    private $psalmConfig = '';
 
     /** @var string */
     private $preamble = '';
@@ -71,6 +81,7 @@ class Module extends BaseModule
     {
         $this->errors = [];
         $this->config['psalm_path'] = realpath($this->config['psalm_path']);
+        $this->psalmConfig = '';
     }
 
     /**
@@ -102,6 +113,22 @@ class Module extends BaseModule
             (array)$errors
         );
         $this->debug($this->remainingErrors());
+    }
+
+    /**
+     * @param string[] $options
+     * @return void
+     */
+    public function runPsalmIn(string $dir, array $options = [])
+    {
+        $pwd = getcwd();
+        $this->fs()->amInPath($dir);
+
+        $config = $this->psalmConfig ?: self::DEFAULT_PSALM_CONFIG;
+        $this->fs()->writeToFile('psalm.xml', $config);
+
+        $this->runPsalmOn('', $options);
+        $this->fs()->amInPath($pwd);
     }
 
     /**
@@ -171,7 +198,7 @@ class Module extends BaseModule
      */
     public function runPsalm()
     {
-        $this->runPsalmOn($this->config['default_file']);
+        $this->runPsalmIn(dirname($this->config['default_file']));
     }
 
     /**
@@ -181,21 +208,18 @@ class Module extends BaseModule
      */
     public function runPsalmWithDeadCodeDetection()
     {
-        $this->fs()->amInPath(dirname($this->config['default_file']));
-
-        $this->fs()->writeToFile(
-            'psalm.xml',
-            '<?xml version="1.0"?>
-            <psalm totallyTyped="true">
-                <projectFiles>
-                    <file name="' . basename($this->config['default_file']) .  '"/>
-                </projectFiles>
-            </psalm>
-            '
-        );
-        $this->runPsalmOn('', ['--find-dead-code']);
+        $this->runPsalmIn(dirname($this->config['default_file']), ['--find-dead-code']);
     }
 
+
+    /**
+     * @Given I have the following config :config
+     * @return void
+     */
+    public function haveTheFollowingConfig(string $config)
+    {
+        $this->psalmConfig = $config;
+    }
 
     /**
      * @Given I have the following code :code

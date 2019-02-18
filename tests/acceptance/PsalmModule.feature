@@ -61,3 +61,23 @@ Feature: Psalm module
       | UnusedParam  | Param $p is never referenced in this method |
       | UnusedClass  | Class C is never used                       |
     And I see no other errors
+
+  Scenario: Running Psalm with custom config
+    Given I have the following config
+      """
+      <?xml version="1.0"?>
+      <psalm totallyTyped="true">
+        <projectFiles>
+          <directory name="."/>
+        </projectFiles>
+        <issueHandlers>
+          <InvalidScalarArgument errorLevel="suppress"/>
+        </issueHandlers>
+      </psalm>
+      """
+    And I have the following code
+      """
+      atan("asd");
+      """
+    When I run Psalm
+    Then I see no errors
