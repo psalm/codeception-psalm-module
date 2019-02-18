@@ -52,7 +52,7 @@ class Module extends BaseModule
     /** @var string */
     private $preamble = '';
 
-    /** @var array{type:string,message:string}[] */
+    /** @var array<int, array{type:string,message:string}> */
     public $errors = [];
 
 
@@ -94,7 +94,7 @@ class Module extends BaseModule
         $cmd = $this->config['psalm_path']
                 . ' --output-format=json '
                 . join(' ', $options) . ' '
-                . escapeshellarg($filename);
+                . ($filename ? escapeshellarg($filename) : '');
         $this->debug('Running: ' . $cmd);
         $this->cli()->runShellCommand($cmd, false);
         /**
@@ -110,7 +110,7 @@ class Module extends BaseModule
                     'message' => (string) $row['message'],
                 ];
             },
-            (array)$errors
+            array_values((array)$errors)
         );
         $this->debug($this->remainingErrors());
     }

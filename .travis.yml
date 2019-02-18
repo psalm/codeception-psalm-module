@@ -7,7 +7,20 @@ php:
     - 7.4snapshot
 before_install:
     - phpenv config-rm xdebug.ini || true
-install:
-    - composer update
 
-script: vendor/bin/codecept run -v
+install:
+  - composer install
+  - if [[ "$DEPS" = 'high' ]]; then travis_retry composer $DEFAULT_COMPOSER_FLAGS update; fi
+  - if [[ "$DEPS" = 'low' ]]; then travis_retry composer $DEFAULT_COMPOSER_FLAGS --prefer-lowest --prefer-stable update; fi
+  - if [[ "$DEPS" = 'stable' ]]; then travis_retry composer $DEFAULT_COMPOSER_FLAGS --prefer-stable update; fi
+  - ./vendor/bin/psalm --version
+
+script: composer check
+
+env:
+    matrix:
+        - DEPS="low"
+        - DEPS="high"
+        - DEPS="stable"
+    global:
+        - DEFAULT_COMPOSER_FLAGS="--no-interaction --no-suggest"
