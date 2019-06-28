@@ -250,6 +250,10 @@ class Module extends BaseModule
         $msg = "Future functionality that Psalm has yet to support: $ref";
         // codeception/base 3.0 dropped Skip class (which was extended from SkippedTestError)
         if (class_exists(Skip::class)) {
+            /**
+             * @psalm-suppress UndefinedClass
+             * @psalm-suppress InvalidThrow
+             */
             throw new Skip($msg);
         } else {
             /** @psalm-suppress InternalClass */
@@ -274,6 +278,10 @@ class Module extends BaseModule
             $msg = "This scenario requires Psalm $op $version because of $reason";
             // codeception/base 3.0 dropped Skip class (which was extended from SkippedTestError)
             if (class_exists(Skip::class)) {
+                /**
+                 * @psalm-suppress UndefinedClass
+                 * @psalm-suppress InvalidThrow
+                 */
                 throw new Skip($msg);
             } else {
                 /** @psalm-suppress InternalClass */
