@@ -10,9 +10,11 @@ use Codeception\Module\Filesystem;
 use Codeception\TestInterface;
 use Composer\Semver\Comparator;
 use Composer\Semver\VersionParser;
-use Muglug\PackageVersions\Versions;
+use Muglug\PackageVersions\Versions as LegacyVersions;
+use PackageVersions\Versions as Versions;
 use PHPUnit\Framework\Assert;
 use Behat\Gherkin\Node\TableNode;
+use PHPUnit\Framework\SkippedTestError;
 use RuntimeException;
 
 class Module extends BaseModule
@@ -90,9 +92,12 @@ class Module extends BaseModule
      */
     public function runPsalmOn(string $filename, array $options = [])
     {
+        $suppressProgress = $this->seePsalmVersionIs('>=', '3.4.0');
+
         $options = array_map('escapeshellarg', $options);
         $cmd = $this->config['psalm_path']
                 . ' --output-format=json '
+                . ($suppressProgress ? ' --no-progress ' : ' ')
                 . join(' ', $options) . ' '
                 . ($filename ? escapeshellarg($filename) : '');
         $this->debug('Running: ' . $cmd);
@@ -165,7 +170,8 @@ class Module extends BaseModule
 
     public function seePsalmVersionIs(string $operator, string $version): bool
     {
-        $currentVersion = (string) Versions::getShortVersion('vimeo/psalm');
+        $currentVersion = $this->getShortVersion('vimeo/psalm');
+
         $this->debug(sprintf("Current version: %s", $currentVersion));
 
         // todo: move to init/construct/before?
@@ -241,7 +247,14 @@ class Module extends BaseModule
      */
     public function haveSomeFuturePsalmThatSupportsThisFeature(string $ref)
     {
-        throw new Skip("Future functionality that Psalm has yet to support: $ref");
+        $msg = "Future functionality that Psalm has yet to support: $ref";
+        // codeception/base 3.0 dropped Skip class (which was extended from SkippedTestError)
+        if (class_exists(Skip::class)) {
+            throw new Skip($msg);
+        } else {
+            /** @psalm-suppress InternalClass */
+            throw new SkippedTestError($msg);
+        }
     }
 
     /**
@@ -258,7 +271,14 @@ class Module extends BaseModule
         $op = (string) self::VERSION_OPERATORS[$operator];
 
         if (!$this->seePsalmVersionIs($op, $version)) {
-            throw new Skip("This scenario requires Psalm $op $version because of $reason");
+            $msg = "This scenario requires Psalm $op $version because of $reason";
+            // codeception/base 3.0 dropped Skip class (which was extended from SkippedTestError)
+            if (class_exists(Skip::class)) {
+                throw new Skip($msg);
+            } else {
+                /** @psalm-suppress InternalClass */
+                throw new SkippedTestError($msg);
+            }
         }
     }
 
@@ -323,5 +343,27 @@ class Module extends BaseModule
             },
             $this->errors
         ));
+    }
+
+
+    private function getShortVersion(string $package): string
+    {
+        if (class_exists(Versions::class)) {
+            /** @psalm-suppress UndefinedClass psalm 3.0 ignores class_exists check */
+            $version = (string) Versions::getVersion($package);
+        } elseif (class_exists(LegacyVersions::class)) {
+            $version = (string) LegacyVersions::getVersion($package);
+        } else {
+            throw new RuntimeException(
+                'Neither muglug/package-versions-56 nor ocramius/package-version is available,'
+                . ' cannot determine versions'
+            );
+        }
+
+        if (false === strpos($version, '@')) {
+            throw new RuntimeException('$version must contain @');
+        }
+
+        return explode('@', $version)[0];
     }
 }

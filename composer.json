@@ -16,14 +16,13 @@
         }
     },
     "require": {
-        "codeception/base": "^2.5",
-        "muglug/package-versions-56": "^1.2",
+        "codeception/base": "^2.5 || ^3.0.0",
         "composer/semver": "^1.4"
     },
     "require-dev": {
         "squizlabs/php_codesniffer": "^3.4",
         "vimeo/psalm": "^3.0",
-        "phpunit/phpunit": "^6.0.0"
+        "phpunit/phpunit": "^6.0.0 || ^7.0.0 || ^8.0.0" 
     },
     "scripts": {
         "check": [
