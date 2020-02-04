@@ -14,7 +14,10 @@ install:
   - if [[ "$DEPS" = 'stable' ]]; then travis_retry composer $DEFAULT_COMPOSER_FLAGS --prefer-stable update; fi
   - ./vendor/bin/psalm --version
 
-script: composer check
+script:
+    - composer test
+    - if [[ $TRAVIS_PHP_VERSION = '7.1' && $DEPS = 'stable' ]]; then composer cs-check; fi
+    - if [[ $TRAVIS_PHP_VERSION = '7.4' && $DEPS = 'stable' ]]; then composer static-analysis; fi
 
 env:
     matrix:
