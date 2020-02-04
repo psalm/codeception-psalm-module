@@ -22,12 +22,12 @@ use RuntimeException;
 class Module extends BaseModule
 {
     /** @var array<string,string */
-    const VERSION_OPERATORS = [
+    private const VERSION_OPERATORS = [
         'newer than' => '>',
         'older than' => '<',
     ];
 
-    const DEFAULT_PSALM_CONFIG = "<?xml version=\"1.0\"?>\n"
+    private const DEFAULT_PSALM_CONFIG = "<?xml version=\"1.0\"?>\n"
         . "<psalm totallyTyped=\"true\">\n"
         . "  <projectFiles>\n"
         . "    <directory name=\".\"/>\n"
