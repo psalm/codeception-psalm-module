@@ -1,8 +1,10 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
+
 namespace Weirdan\Codeception\Psalm;
 
 use Codeception\Exception\ModuleRequireException;
-use Codeception\Exception\Skip;
 use Codeception\Exception\TestRuntimeException;
 use Codeception\Module as BaseModule;
 use Codeception\Module\Cli;
@@ -11,7 +13,7 @@ use Codeception\TestInterface;
 use Composer\Semver\Comparator;
 use Composer\Semver\VersionParser;
 use Muglug\PackageVersions\Versions as LegacyVersions;
-use PackageVersions\Versions as Versions;
+use PackageVersions\Versions;
 use PHPUnit\Framework\Assert;
 use Behat\Gherkin\Node\TableNode;
 use PHPUnit\Framework\SkippedTestError;
@@ -247,18 +249,8 @@ class Module extends BaseModule
      */
     public function haveSomeFuturePsalmThatSupportsThisFeature(string $ref)
     {
-        $msg = "Future functionality that Psalm has yet to support: $ref";
-        // codeception/base 3.0 dropped Skip class (which was extended from SkippedTestError)
-        if (class_exists(Skip::class)) {
-            /**
-             * @psalm-suppress UndefinedClass
-             * @psalm-suppress InvalidThrow
-             */
-            throw new Skip($msg);
-        } else {
-            /** @psalm-suppress InternalClass */
-            throw new SkippedTestError($msg);
-        }
+        /** @psalm-suppress InternalClass */
+        throw new SkippedTestError("Future functionality that Psalm has yet to support: $ref");
     }
 
     /**
@@ -275,18 +267,8 @@ class Module extends BaseModule
         $op = (string) self::VERSION_OPERATORS[$operator];
 
         if (!$this->seePsalmVersionIs($op, $version)) {
-            $msg = "This scenario requires Psalm $op $version because of $reason";
-            // codeception/base 3.0 dropped Skip class (which was extended from SkippedTestError)
-            if (class_exists(Skip::class)) {
-                /**
-                 * @psalm-suppress UndefinedClass
-                 * @psalm-suppress InvalidThrow
-                 */
-                throw new Skip($msg);
-            } else {
-                /** @psalm-suppress InternalClass */
-                throw new SkippedTestError($msg);
-            }
+            /** @psalm-suppress InternalClass */
+            throw new SkippedTestError("This scenario requires Psalm $op $version because of $reason");
         }
     }
 
