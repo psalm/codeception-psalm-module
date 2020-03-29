@@ -81,3 +81,52 @@ Feature: Psalm module
       """
     When I run Psalm
     Then I see no errors
+
+  Scenario: Running psalm on an individual file
+    Given I have the following code in "C.php"
+      """
+      <?php
+      class C extends PPP {}
+      """
+    And I have the following code in "P.php"
+      """
+      <?php
+      class PPP {}
+      """
+    When I run Psalm on "P.php"
+    Then I see no errors
+
+  Scenario: Running psalm on an individual file without autoloader
+    Given I have the following code in "C.php"
+      """
+      <?php
+      class C extends PPP {}
+      """
+    And I have the following code in "P.php"
+      """
+      <?php
+      class PPP {}
+      """
+    When I run Psalm on "C.php"
+    Then I see these errors
+      | Type           | Message                               |
+      | UndefinedClass | Class or interface PPP does not exist |
+
+  Scenario: Running psalm on an individual file with autoloader
+    Given I have the following code in "C.php"
+      """
+      <?php
+      class C extends PPP {}
+      """
+    And I have the following code in "P.php"
+      """
+      <?php
+      class PPP {}
+      """
+    And I have the following class map
+      | Class | File  |
+      | C     | C.php |
+      | PPP   | P.php |
+    When I run Psalm on "C.php"
+    Then I see no errors
+

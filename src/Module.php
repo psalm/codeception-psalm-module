@@ -22,13 +22,13 @@ use RuntimeException;
 class Module extends BaseModule
 {
     /** @var array<string,string */
-    const VERSION_OPERATORS = [
+    private const VERSION_OPERATORS = [
         'newer than' => '>',
         'older than' => '<',
     ];
 
-    const DEFAULT_PSALM_CONFIG = "<?xml version=\"1.0\"?>\n"
-        . "<psalm totallyTyped=\"true\">\n"
+    private const DEFAULT_PSALM_CONFIG = "<?xml version=\"1.0\"?>\n"
+        . "<psalm totallyTyped=\"true\" %s>\n"
         . "  <projectFiles>\n"
         . "    <directory name=\".\"/>\n"
         . "  </projectFiles>\n"
@@ -47,7 +47,8 @@ class Module extends BaseModule
     /** @var array<string,string> */
     protected $config = [
         'psalm_path' => 'vendor/bin/psalm',
-        'default_file' => 'tests/_run/somefile.php',
+        'default_file' => 'somefile.php',
+        'default_dir' => 'tests/_run/',
     ];
 
     /** @var string */
@@ -59,13 +60,13 @@ class Module extends BaseModule
     /** @var array<int, array{type:string,message:string}> */
     public $errors = [];
 
+    /** @var bool */
+    private $hasAutoload = false;
 
-    /**
-     * @return void
-     */
-    public function _beforeSuite($configuration = [])
+
+    public function _beforeSuite($configuration = []): void
     {
-        $defaultDir = dirname($this->config['default_file']);
+        $defaultDir = $this->config['default_dir'];
         if (file_exists($defaultDir)) {
             if (is_dir($defaultDir)) {
                 return;
@@ -78,21 +79,19 @@ class Module extends BaseModule
         }
     }
 
-    /**
-     * @return void
-     */
-    public function _before(TestInterface $test)
+    public function _before(TestInterface $test): void
     {
+        $this->hasAutoload = false;
         $this->errors = [];
         $this->config['psalm_path'] = realpath($this->config['psalm_path']);
         $this->psalmConfig = '';
+        $this->fs()->cleanDir($this->config['default_dir']);
     }
 
     /**
      * @param string[] $options
-     * @return void
      */
-    public function runPsalmOn(string $filename, array $options = [])
+    public function runPsalmOn(string $filename, array $options = []): void
     {
         $suppressProgress = $this->seePsalmVersionIs('>=', '3.4.0');
 
@@ -124,24 +123,22 @@ class Module extends BaseModule
 
     /**
      * @param string[] $options
-     * @return void
      */
-    public function runPsalmIn(string $dir, array $options = [])
+    public function runPsalmIn(string $dir, array $options = []): void
     {
         $pwd = getcwd();
         $this->fs()->amInPath($dir);
 
         $config = $this->psalmConfig ?: self::DEFAULT_PSALM_CONFIG;
+        $config = sprintf($config, $this->hasAutoload ? 'autoloader="autoload.php"' : '');
+
         $this->fs()->writeToFile('psalm.xml', $config);
 
         $this->runPsalmOn('', $options);
         $this->fs()->amInPath($pwd);
     }
 
-    /**
-     * @return void
-     */
-    public function seeThisError(string $type, string $message)
+    public function seeThisError(string $type, string $message): void
     {
         if (empty($this->errors)) {
             Assert::fail("No errors");
@@ -160,10 +157,8 @@ class Module extends BaseModule
     /**
      * @Then I see no errors
      * @Then I see no other errors
-     *
-     * @return void
      */
-    public function seeNoErrors()
+    public function seeNoErrors(): void
     {
         if (!empty($this->errors)) {
             Assert::fail("There were errors: \n" . $this->remainingErrors());
@@ -190,10 +185,8 @@ class Module extends BaseModule
 
     /**
      * @Given I have the following code preamble :code
-     *
-     * @return void
      */
-    public function haveTheFollowingCodePreamble(string $code)
+    public function haveTheFollowingCodePreamble(string $code): void
     {
         $this->preamble = $code;
     }
@@ -201,53 +194,63 @@ class Module extends BaseModule
     /**
      * @When I run psalm
      * @When I run Psalm
-     *
-     * @return void
      */
-    public function runPsalm()
+    public function runPsalm(): void
     {
-        $this->runPsalmIn(dirname($this->config['default_file']));
+        $this->runPsalmIn($this->config['default_dir']);
     }
 
     /**
      * @When I run Psalm with dead code detection
-     *
-     * @return void
      */
-    public function runPsalmWithDeadCodeDetection()
+    public function runPsalmWithDeadCodeDetection(): void
     {
-        $this->runPsalmIn(dirname($this->config['default_file']), ['--find-dead-code']);
+        $this->runPsalmIn($this->config['default_dir'], ['--find-dead-code']);
+    }
+
+    /**
+     * @When I run Psalm on :arg1
+     * @When I run psalm on :arg1
+     */
+    public function runPsalmOnASingleFile(string $file): void
+    {
+        $pwd = getcwd();
+        $this->fs()->amInPath($this->config['default_dir']);
+
+        $config = $this->psalmConfig ?: self::DEFAULT_PSALM_CONFIG;
+        $config = sprintf($config, $this->hasAutoload ? 'autoloader="autoload.php"' : '');
+
+        $this->fs()->writeToFile('psalm.xml', $config);
+
+        $this->runPsalmOn($file);
+        $this->fs()->amInPath($pwd);
     }
 
 
     /**
      * @Given I have the following config :config
-     * @return void
      */
-    public function haveTheFollowingConfig(string $config)
+    public function haveTheFollowingConfig(string $config): void
     {
         $this->psalmConfig = $config;
     }
 
     /**
      * @Given I have the following code :code
-     *
-     * @return void
      */
-    public function haveTheFollowingCode(string $code)
+    public function haveTheFollowingCode(string $code): void
     {
+        $file = rtrim($this->config['default_dir'], '/') . '/' . $this->config['default_file'];
         $this->fs()->writeToFile(
-            $this->config['default_file'],
+            $file,
             $this->preamble . $code
         );
     }
 
     /**
      * @Given I have some future Psalm that supports this feature :ref
-     *
-     * @return void
      */
-    public function haveSomeFuturePsalmThatSupportsThisFeature(string $ref)
+    public function haveSomeFuturePsalmThatSupportsThisFeature(string $ref): void
     {
         /** @psalm-suppress InternalClass */
         throw new SkippedTestError("Future functionality that Psalm has yet to support: $ref");
@@ -255,10 +258,8 @@ class Module extends BaseModule
 
     /**
      * @Given /I have Psalm (newer than|older than) "([0-9.]+)" \(because of "([^"]+)"\)/
-     *
-     * @return void
      */
-    public function havePsalmOfACertainVersionRangeBecauseOf(string $operator, string $version, string $reason)
+    public function havePsalmOfACertainVersionRangeBecauseOf(string $operator, string $version, string $reason): void
     {
         if (!isset(self::VERSION_OPERATORS[$operator])) {
             throw new TestRuntimeException("Unknown operator: $operator");
@@ -274,10 +275,8 @@ class Module extends BaseModule
 
     /**
      * @Then I see these errors
-     *
-     * @return void
      */
-    public function seeTheseErrors(TableNode $list)
+    public function seeTheseErrors(TableNode $list): void
     {
         /** @psalm-suppress MixedAssignment */
         foreach (array_values($list->getRows()) as $i => $error) {
@@ -289,9 +288,60 @@ class Module extends BaseModule
         }
     }
 
+    /**
+     * @Given I have the following code in :arg1 :arg2
+     */
+    public function haveTheFollowingCodeIn(string $filename, string $code): void
+    {
+        $file = rtrim($this->config['default_dir'], '/') . '/' . $filename;
+        $this->fs()->writeToFile($file, $code);
+    }
 
+    /**
+     * @Given I have the following autoload map
+     * @Given I have the following classmap
+     * @Given I have the following class map
+     */
+    public function haveTheFollowingAutoloadMap(TableNode $list): void
+    {
+        $map = [];
+        foreach (array_values($list->getRows()) as $i => $row) {
+            assert(is_array($row));
+            if (0 === $i) {
+                continue;
+            }
+            assert(is_string($row[0]));
+            assert(is_string($row[1]));
+            $map[] = [$row[0], $row[1]];
+        }
 
-
+        $code = sprintf(
+            '<?php
+            spl_autoload_register(function(string $class) {
+                /** @var ?array<string,string> $classes */
+                static $classes = null;
+                if (null === $classes) {
+                    $classes = [%s];
+                }
+                if (array_key_exists($class, $classes)) {
+                    /** @psalm-suppress UnresolvableInclude */
+                    include $classes[$class];
+                }
+            });',
+            join(
+                ',',
+                array_map(
+                    function (array $row): string {
+                        return "\n'$row[0]' => '$row[1]'";
+                    },
+                    $map
+                )
+            )
+        );
+        $file = rtrim($this->config['default_dir'], '/') . '/' . 'autoload.php';
+        $this->fs()->writeToFile($file, $code);
+        $this->hasAutoload = true;
+    }
 
     private function convertToRegexp(string $in): string
     {
