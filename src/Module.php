@@ -305,6 +305,7 @@ class Module extends BaseModule
     public function haveTheFollowingAutoloadMap(TableNode $list): void
     {
         $map = [];
+        /** @psalm-suppress MixedAssignment */
         foreach (array_values($list->getRows()) as $i => $row) {
             assert(is_array($row));
             if (0 === $i) {
