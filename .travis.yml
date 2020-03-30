@@ -23,3 +23,7 @@ env:
         - DEPS="stable"
     global:
         - DEFAULT_COMPOSER_FLAGS="--no-interaction --no-suggest"
+cache:
+  directories:
+    - vendor
+    - $HOME/.composer/cache
