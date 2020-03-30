@@ -130,3 +130,22 @@ Feature: Psalm module
     When I run Psalm on "C.php"
     Then I see no errors
 
+  Scenario: Running psalm on an individual file with autoloader using namespaces
+    Given I have the following code in "C.php"
+      """
+      <?php
+      namespace NS;
+      class C extends PPP {}
+      """
+    And I have the following code in "P.php"
+      """
+      namespace NS;
+      <?php
+      class PPP {}
+      """
+    And I have the following class map
+      | Class    | File  |
+      | NS\C     | C.php |
+      | NS\PPP   | P.php |
+    When I run Psalm on "C.php"
+    Then I see no errors
