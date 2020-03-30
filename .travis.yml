@@ -8,6 +8,7 @@ before_install:
     - phpenv config-rm xdebug.ini || true
 
 install:
+  - composer config cache-dir
   - composer install
   - if [[ "$DEPS" = 'high' ]]; then travis_retry composer $DEFAULT_COMPOSER_FLAGS update; fi
   - if [[ "$DEPS" = 'low' ]]; then travis_retry composer $DEFAULT_COMPOSER_FLAGS --prefer-lowest --prefer-stable update; fi
@@ -25,5 +26,4 @@ env:
         - DEFAULT_COMPOSER_FLAGS="--no-interaction --no-suggest"
 cache:
   directories:
-    - vendor
     - $HOME/.composer/cache
