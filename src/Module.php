@@ -100,14 +100,23 @@ class Module extends BaseModule
                 . ' --output-format=json '
                 . ($suppressProgress ? ' --no-progress ' : ' ')
                 . join(' ', $options) . ' '
-                . ($filename ? escapeshellarg($filename) : '');
+                . ($filename ? escapeshellarg($filename) : '')
+                . ' 2>&1';
         $this->debug('Running: ' . $cmd);
         $this->cli()->runShellCommand($cmd, false);
-        /**
-         * @psalm-suppress MixedAssignment
-         * @psalm-suppress MissingPropertyType shouldn't be really happening
-         */
-        $errors = json_decode((string)$this->cli()->output, true) ?? [];
+
+        $output = (string)$this->cli()->output;
+        $exitCode = (int)$this->cli()->result;
+
+        $this->debug(sprintf('Psalm exit code: %d', $exitCode));
+        // $this->debug('Psalm output: ' . $output);
+
+        /** @psalm-suppress MixedAssignment */
+        $errors = json_decode($output, true);
+
+        if (null === $errors && json_last_error() !== JSON_ERROR_NONE && 0 !== $exitCode) {
+            \PHPUnit\Framework\Assert::fail("Failed to parse output: " . $output . "\nError:" . json_last_error_msg());
+        }
 
         $this->errors = array_map(
             function (array $row): array {

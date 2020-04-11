@@ -139,8 +139,8 @@ Feature: Psalm module
       """
     And I have the following code in "P.php"
       """
-      namespace NS;
       <?php
+      namespace NS;
       class PPP {}
       """
     And I have the following class map
@@ -149,3 +149,20 @@ Feature: Psalm module
       | NS\PPP   | P.php |
     When I run Psalm on "C.php"
     Then I see no errors
+
+  Scenario: Psalm crashes
+    Given I have the following code in "autoload.php"
+      """
+      <?php missing_function();
+      """
+    And I have the following config
+      """
+      <?xml version="1.0"?>
+      <psalm totallyTyped="true" autoloader="autoload.php">
+        <projectFiles>
+          <directory name="."/>
+        </projectFiles>
+      </psalm>
+      """
+    When I run Psalm
+    Then test fails, but I how do I even test that?
