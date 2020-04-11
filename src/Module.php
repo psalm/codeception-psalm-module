@@ -105,7 +105,9 @@ class Module extends BaseModule
         $this->debug('Running: ' . $cmd);
         $this->cli()->runShellCommand($cmd, false);
 
+        /** @psalm-suppress MissingPropertyType shouldn't be required, but older Psalm needs it */
         $output = (string)$this->cli()->output;
+        /** @psalm-suppress MissingPropertyType shouldn't be required, but older Psalm needs it */
         $exitCode = (int)$this->cli()->result;
 
         $this->debug(sprintf('Psalm exit code: %d', $exitCode));
