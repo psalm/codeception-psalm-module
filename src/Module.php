@@ -156,13 +156,25 @@ class Module extends BaseModule
         }
 
         foreach ($this->errors as $i => $error) {
-            if ($error['type'] === $type && preg_match($this->convertToRegexp($message), $error['message'])) {
+            if ($error['type'] === $type && $this->messageMatches($message, $error['message'])) {
                 unset($this->errors[$i]);
                 return;
             }
         }
 
         Assert::fail("Didn't see [ $type $message ] in: \n" . $this->remainingErrors());
+    }
+
+    private function messageMatches(string $expected, string $actual): bool
+    {
+        $regexpDelimiter = '/';
+        if ($expected[0] === $regexpDelimiter && $expected[strlen($expected) - 1] === $regexpDelimiter) {
+            $regexp = $expected;
+        } else {
+            $regexp = $this->convertToRegexp($expected);
+        }
+
+        return (bool) preg_match($regexp, $actual);
     }
 
     /**

@@ -150,6 +150,40 @@ Feature: Psalm module
     When I run Psalm on "C.php"
     Then I see no errors
 
+  Scenario: Using regexps to match error messages
+    Given I have the following code
+      """
+      class C extends PPP {}
+      """
+    When I run Psalm
+    Then I see these errors
+      | Type           | Message               |
+      | UndefinedClass | /P{3} does not exist/ |
+    And I see no other errors
+
+  Scenario: Escaping pipes in regexps
+    Given I have the following code
+      """
+      class C extends PPP {}
+      """
+    When I run Psalm
+    Then I see these errors
+      | Type           | Message                    |
+      | UndefinedClass | /(P\|A){3} does not exist/ |
+    And I see no other errors
+
+  Scenario: Using backslashes in regexps
+    Given I have the following code
+      """
+      class C extends PPP {}
+      """
+    When I run Psalm
+    Then I see these errors
+      | Type           | Message                   |
+      | UndefinedClass | /\bP{3}\b does not exist/ |
+    And I see no other errors
+
+
   Scenario: Psalm crashes
     Given I have the following code in "autoload.php"
       """
