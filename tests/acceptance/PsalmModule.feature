@@ -17,6 +17,7 @@ Feature: Psalm module
       """
     When I run Psalm
     Then I see no errors
+    And I see exit code 0
 
   Scenario: Running with errors
     Given I have the following code
@@ -28,6 +29,7 @@ Feature: Psalm module
       | Type                  | Message                                            |
       | InvalidScalarArgument | Argument 1 of atan expects float, string% provided |
     And I see no other errors
+    And I see exit code 1
 
   Scenario: Skipping depending on a certain Psalm version
     Given I have Psalm newer than "999.99" (because of "me wanting to see if it skips")
