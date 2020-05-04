@@ -63,6 +63,8 @@ class Module extends BaseModule
     /** @var bool */
     private $hasAutoload = false;
 
+    /** @var int */
+    private $exitCode = 0;
 
     public function _beforeSuite($configuration = []): void
     {
@@ -110,6 +112,8 @@ class Module extends BaseModule
         /** @psalm-suppress MissingPropertyType shouldn't be required, but older Psalm needs it */
         $exitCode = (int)$this->cli()->result;
 
+        $this->exitCode = $exitCode;
+
         $this->debug(sprintf('Psalm exit code: %d', $exitCode));
         // $this->debug('Psalm output: ' . $output);
 
@@ -147,6 +151,18 @@ class Module extends BaseModule
 
         $this->runPsalmOn('', $options);
         $this->fs()->amInPath($pwd);
+    }
+
+    /**
+     * @Then I see exit code :code
+     */
+    public function seeExitCode(int $exitCode): void
+    {
+        if ($this->exitCode === $exitCode) {
+            return;
+        }
+
+        Assert::fail("Expected exit code {$exitCode}, got {$this->exitCode}");
     }
 
     public function seeThisError(string $type, string $message): void
