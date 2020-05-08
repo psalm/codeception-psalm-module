@@ -57,14 +57,17 @@ class Module extends BaseModule
     /** @var string */
     private $preamble = '';
 
-    /** @var array<int, array{type:string,message:string}> */
-    public $errors = [];
+    /** @var ?array<int, array{type:string,message:string}> */
+    private $errors = null;
 
     /** @var bool */
     private $hasAutoload = false;
 
-    /** @var int */
-    private $exitCode = 0;
+    /** @var ?int */
+    private $exitCode = null;
+
+    /** @var ?string */
+    protected $output = null;
 
     public function _beforeSuite($configuration = []): void
     {
@@ -84,7 +87,9 @@ class Module extends BaseModule
     public function _before(TestInterface $test): void
     {
         $this->hasAutoload = false;
-        $this->errors = [];
+        $this->errors = null;
+        $this->output = null;
+        $this->exitCode = null;
         $this->config['psalm_path'] = realpath($this->config['psalm_path']);
         $this->psalmConfig = '';
         $this->fs()->cleanDir($this->config['default_dir']);
@@ -108,32 +113,12 @@ class Module extends BaseModule
         $this->cli()->runShellCommand($cmd, false);
 
         /** @psalm-suppress MissingPropertyType shouldn't be required, but older Psalm needs it */
-        $output = (string)$this->cli()->output;
+        $this->output = (string)$this->cli()->output;
         /** @psalm-suppress MissingPropertyType shouldn't be required, but older Psalm needs it */
-        $exitCode = (int)$this->cli()->result;
+        $this->exitCode = (int)$this->cli()->result;
 
-        $this->exitCode = $exitCode;
-
-        $this->debug(sprintf('Psalm exit code: %d', $exitCode));
-        // $this->debug('Psalm output: ' . $output);
-
-        /** @psalm-suppress MixedAssignment */
-        $errors = json_decode($output, true);
-
-        if (null === $errors && json_last_error() !== JSON_ERROR_NONE && 0 !== $exitCode) {
-            \PHPUnit\Framework\Assert::fail("Failed to parse output: " . $output . "\nError:" . json_last_error_msg());
-        }
-
-        $this->errors = array_map(
-            function (array $row): array {
-                return [
-                    'type' => (string) $row['type'],
-                    'message' => (string) $row['message'],
-                ];
-            },
-            array_values((array)$errors)
-        );
-        $this->debug($this->remainingErrors());
+        $this->debug(sprintf('Psalm exit code: %d', $this->exitCode));
+        // $this->debug('Psalm output: ' . $this->output);
     }
 
     /**
@@ -167,6 +152,7 @@ class Module extends BaseModule
 
     public function seeThisError(string $type, string $message): void
     {
+        $this->parseErrors();
         if (empty($this->errors)) {
             Assert::fail("No errors");
         }
@@ -199,6 +185,7 @@ class Module extends BaseModule
      */
     public function seeNoErrors(): void
     {
+        $this->parseErrors();
         if (!empty($this->errors)) {
             Assert::fail("There were errors: \n" . $this->remainingErrors());
         }
@@ -414,6 +401,7 @@ class Module extends BaseModule
 
     private function remainingErrors(): string
     {
+        $this->parseErrors();
         return (string) new TableNode(array_map(
             function (array $error): array {
                 return [
@@ -424,7 +412,6 @@ class Module extends BaseModule
             $this->errors
         ));
     }
-
 
     private function getShortVersion(string $package): string
     {
@@ -445,5 +432,38 @@ class Module extends BaseModule
         }
 
         return explode('@', $version)[0];
+    }
+
+    /**
+     * @psalm-assert !null $this->errors
+     */
+    private function parseErrors(): void
+    {
+        if (null !== $this->errors) {
+            return;
+        }
+
+        if (empty($this->output)) {
+            $this->errors = [];
+            return;
+        }
+
+        /** @psalm-suppress MixedAssignment */
+        $errors = json_decode($this->output, true);
+
+        if (null === $errors && json_last_error() !== JSON_ERROR_NONE && 0 !== $this->exitCode) {
+            Assert::fail("Failed to parse output: " . $this->output . "\nError:" . json_last_error_msg());
+        }
+
+        $this->errors = array_map(
+            function (array $row): array {
+                return [
+                    'type' => (string) $row['type'],
+                    'message' => (string) $row['message'],
+                ];
+            },
+            array_values((array)$errors)
+        );
+        $this->debug($this->remainingErrors());
     }
 }

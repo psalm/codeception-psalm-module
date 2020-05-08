@@ -185,9 +185,9 @@ Feature: Psalm module
       | UndefinedClass | /\bP{3}\b does not exist/ |
     And I see no other errors
 
-
-  Scenario: Psalm crashes
-    Given I have the following code in "autoload.php"
+  Scenario: Psalm crashes (3.7.x)
+    Given I have Psalm older than "3.8.0" (because of "exit code changed in 3.8.0")
+    And I have the following code in "autoload.php"
       """
       <?php missing_function();
       """
@@ -201,4 +201,22 @@ Feature: Psalm module
       </psalm>
       """
     When I run Psalm
-    Then test fails, but I how do I even test that?
+    Then I see exit code 255
+
+  Scenario: Psalm crashes (3.8.0+)
+    Given I have Psalm newer than "3.7.2" (because of "exit code changed in 3.8.0")
+    And I have the following code in "autoload.php"
+      """
+      <?php missing_function();
+      """
+    And I have the following config
+      """
+      <?xml version="1.0"?>
+      <psalm totallyTyped="true" autoloader="autoload.php">
+        <projectFiles>
+          <directory name="."/>
+        </projectFiles>
+      </psalm>
+      """
+    When I run Psalm
+    Then I see exit code 1
