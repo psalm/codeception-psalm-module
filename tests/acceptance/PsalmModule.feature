@@ -201,4 +201,4 @@ Feature: Psalm module
       </psalm>
       """
     When I run Psalm
-    Then test fails, but I how do I even test that?
+    Then I see exit code 1

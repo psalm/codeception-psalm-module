@@ -58,16 +58,16 @@ class Module extends BaseModule
     private $preamble = '';
 
     /** @var ?array<int, array{type:string,message:string}> */
-    private $errors;
+    private $errors = null;
 
     /** @var bool */
     private $hasAutoload = false;
 
-    /** @var int */
-    private $exitCode = 0;
+    /** @var ?int */
+    private $exitCode = null;
 
     /** @var ?string */
-    protected $output;
+    protected $output = null;
 
     public function _beforeSuite($configuration = []): void
     {
@@ -87,9 +87,9 @@ class Module extends BaseModule
     public function _before(TestInterface $test): void
     {
         $this->hasAutoload = false;
-        unset($this->errors);
-        unset($this->output);
-        $this->exitCode = 0;
+        $this->errors = null;
+        $this->output = null;
+        $this->exitCode = null;
         $this->config['psalm_path'] = realpath($this->config['psalm_path']);
         $this->psalmConfig = '';
         $this->fs()->cleanDir($this->config['default_dir']);
@@ -152,13 +152,14 @@ class Module extends BaseModule
 
     public function seeThisError(string $type, string $message): void
     {
-        if (empty($this->getErrors())) {
+        $this->parseErrors();
+        if (empty($this->errors)) {
             Assert::fail("No errors");
         }
 
-        foreach ($this->getErrors() as $i => $error) {
+        foreach ($this->errors as $i => $error) {
             if ($error['type'] === $type && $this->messageMatches($message, $error['message'])) {
-                unset($this->getErrors()[$i]);
+                unset($this->errors[$i]);
                 return;
             }
         }
@@ -184,7 +185,8 @@ class Module extends BaseModule
      */
     public function seeNoErrors(): void
     {
-        if (!empty($this->getErrors())) {
+        $this->parseErrors();
+        if (!empty($this->errors)) {
             Assert::fail("There were errors: \n" . $this->remainingErrors());
         }
     }
@@ -399,6 +401,7 @@ class Module extends BaseModule
 
     private function remainingErrors(): string
     {
+        $this->parseErrors();
         return (string) new TableNode(array_map(
             function (array $error): array {
                 return [
@@ -406,7 +409,7 @@ class Module extends BaseModule
                     'message' => $error['message'] ?? '',
                 ];
             },
-            $this->getErrors()
+            $this->errors
         ));
     }
 
@@ -432,35 +435,35 @@ class Module extends BaseModule
     }
 
     /**
-     * @return array<int, array{type:string,message:string}>
+     * @psalm-assert !null $this->errors
      */
-    private function &getErrors(): array
+    private function parseErrors(): void
     {
-        if (!isset($this->errors)) {
-            if (!$this->output) {
-                $this->errors = [];
-                return $this->errors;
-            }
-
-            /** @psalm-suppress MixedAssignment */
-            $errors = json_decode($this->output, true);
-
-            if (null === $errors && json_last_error() !== JSON_ERROR_NONE) {
-                Assert::fail("Failed to parse output: " . $this->output . "\nError:" . json_last_error_msg());
-            }
-
-            $this->errors = array_map(
-                function (array $row): array {
-                    return [
-                        'type' => (string) $row['type'],
-                        'message' => (string) $row['message'],
-                    ];
-                },
-                array_values((array)$errors)
-            );
-            $this->debug($this->remainingErrors());
+        if (null !== $this->errors) {
+            return;
         }
 
-        return $this->errors;
+        if (empty($this->output)) {
+            $this->errors = [];
+            return;
+        }
+
+        /** @psalm-suppress MixedAssignment */
+        $errors = json_decode($this->output, true);
+
+        if (null === $errors && json_last_error() !== JSON_ERROR_NONE && 0 !== $this->exitCode) {
+            Assert::fail("Failed to parse output: " . $this->output . "\nError:" . json_last_error_msg());
+        }
+
+        $this->errors = array_map(
+            function (array $row): array {
+                return [
+                    'type' => (string) $row['type'],
+                    'message' => (string) $row['message'],
+                ];
+            },
+            array_values((array)$errors)
+        );
+        $this->debug($this->remainingErrors());
     }
 }
