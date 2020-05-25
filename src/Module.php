@@ -93,6 +93,7 @@ class Module extends BaseModule
         $this->config['psalm_path'] = realpath($this->config['psalm_path']);
         $this->psalmConfig = '';
         $this->fs()->cleanDir($this->config['default_dir']);
+        $this->preamble = '';
     }
 
     /**
