@@ -19,7 +19,7 @@
         "php": "^7.1",
         "ext-json": "*",
         "codeception/codeception": "^4.0.3",
-        "composer/semver": "^1.4",
+        "composer/semver": "^1.4 || ^2.0 || ^3.0",
         "codeception/module-cli": "^1.0.0",
         "codeception/module-filesystem": "^1.0.2"
     },
