@@ -239,7 +239,7 @@ class Module extends BaseModule
     {
         $this->runPsalmIn($this->config['default_dir'], ['--find-dead-code']);
     }
-    
+
     /**
      * @When I run Psalm with taint analysis
      */
