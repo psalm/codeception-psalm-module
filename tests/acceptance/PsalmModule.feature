@@ -223,3 +223,15 @@ Feature: Psalm module
       """
     When I run Psalm
     Then I see exit code 1
+
+  Scenario: Running with taint analysis
+    Given I have Psalm with taint analysis
+    And I have the following code
+      """
+      <?php echo $_GET['param'];
+      """
+    When I run Psalm with taint analysis
+    Then I see these errors
+      | Type            | Message |
+      | TaintedInput    | /./     |
+    And I see no other errors
