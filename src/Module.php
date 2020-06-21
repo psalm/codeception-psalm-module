@@ -234,17 +234,40 @@ class Module extends BaseModule
 
     /**
      * @When I run Psalm with dead code detection
+     * @When I run psalm with dead code detection
      */
     public function runPsalmWithDeadCodeDetection(): void
     {
         $this->runPsalmIn($this->config['default_dir'], ['--find-dead-code']);
     }
 
+    public function seePsalmHasTaintAnalysis(): bool
+    {
+        $taintAnalysisAvailable = $this->seePsalmVersionIs('>=', '3.10.0');
+        return $taintAnalysisAvailable;
+    }
+
+    /**
+     * @Given I have Psalm with taint analysis
+     * @Given I have psalm with taint analysis
+     */
+    public function havePsalmWithTaintAnalysis(): void
+    {
+        if (!$this->seePsalmHasTaintAnalysis()) {
+            /** @psalm-suppress InternalClass */
+            throw new SkippedTestError("This scenario requires Psalm with taint analysis (3.10+)");
+        }
+    }
+
     /**
      * @When I run Psalm with taint analysis
+     * @When I run psalm with taint analysis
      */
     public function runPsalmWithTaintAnalysis(): void
     {
+        if (!$this->seePsalmHasTaintAnalysis()) {
+            Assert::fail('Taint analysis is available since 3.10.0');
+        }
         $this->runPsalmIn($this->config['default_dir'], ['--track-tainted-input']);
     }
 
