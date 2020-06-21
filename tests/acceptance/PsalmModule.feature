@@ -44,10 +44,13 @@ Feature: Psalm module
     Given I have Psalm older than "999.99" (because of "me wanting to see if it runs")
     And I have the following code
       """
-      atan(1.);
+      atan("zz");
       """
     When I run Psalm
-    Then I see no errors
+    Then I see these errors
+      | Type                     | Message |
+      | InvalidScalarArgument    | /./     |
+    And I see no other errors
 
   Scenario: Running Psalm with dead code detection
     Given I have the following code

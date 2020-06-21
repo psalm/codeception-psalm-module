@@ -200,8 +200,13 @@ class Module extends BaseModule
 
         // todo: move to init/construct/before?
         $parser = new VersionParser();
-
         $currentVersion =  $parser->normalize($currentVersion);
+
+        // restore pre-composer/semver:2.0 behaviour for comparison purposes
+        if (preg_match('/^dev-/', $currentVersion)) {
+            $currentVersion = '9999999-dev';
+        }
+
         $version = $parser->normalize($version);
 
         $result = Comparator::compare($currentVersion, $operator, $version);
