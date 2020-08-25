@@ -22,7 +22,7 @@ use RuntimeException;
 
 class Module extends BaseModule
 {
-    /** @var array<string,string */
+    /** @var array<string,string> */
     private const VERSION_OPERATORS = [
         'newer than' => '>',
         'older than' => '<',
@@ -425,6 +425,7 @@ class Module extends BaseModule
             return;
         }
 
+        /** @psalm-suppress InternalClass */
         throw new SkippedTestError("This scenario requires $package to match $versionConstraint");
     }
 
@@ -473,6 +474,7 @@ class Module extends BaseModule
 
     private function getShortVersion(string $package): string
     {
+        /** @psalm-suppress DeprecatedClass Support of legacy code */
         if (class_exists(InstalledVersions::class)) {
             /** @psalm-suppress UndefinedClass Composer\InstalledVersions is undefined when using Composer 1.x */
             return (string) InstalledVersions::getPrettyVersion($package);
