@@ -235,3 +235,24 @@ Feature: Psalm module
       | Type            | Message |
       | TaintedInput    | /./     |
     And I see no other errors
+
+  Scenario: Skipping when dependency is not satisfied
+    Given I have the "codeception/module-cli" package satisfying the "^123.0"
+    And I have the following code
+      """
+      atan("zz");
+      """
+    When I run Psalm
+    Then I see no errors
+
+  Scenario: Running when dependency is satisfied
+    Given I have the "codeception/module-cli" package satisfying the "*"
+    And I have the following code
+      """
+      atan("zz");
+      """
+    When I run Psalm
+    Then I see these errors
+      | Type                     | Message |
+      | InvalidScalarArgument    | /./     |
+    And I see no other errors
