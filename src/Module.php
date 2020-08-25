@@ -221,7 +221,7 @@ class Module extends BaseModule
      */
     public function seePsalmVersionIs(string $operator, string $version): bool
     {
-        return $this->packageSatisfiesVersionConstraint('vimeo/psalm', $operator.$version);
+        return $this->packageSatisfiesVersionConstraint('vimeo/psalm', $operator . $version);
     }
 
     /**
@@ -339,7 +339,7 @@ class Module extends BaseModule
 
         $op = (string) self::VERSION_OPERATORS[$operator];
 
-        if (!$this->packageSatisfiesVersionConstraint('vimeo/psalm', $op.$version)) {
+        if (!$this->packageSatisfiesVersionConstraint('vimeo/psalm', $op . $version)) {
             /** @psalm-suppress InternalClass */
             throw new SkippedTestError("This scenario requires Psalm $op $version because of $reason");
         }
