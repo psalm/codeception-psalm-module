@@ -208,9 +208,10 @@ class Module extends BaseModule
             $currentVersion = '9999999-dev';
         }
 
-        $result = $parser->parseConstraints($currentVersion)
-            ->matches($parser->parseConstraints($versionConstraint));
-        $this->debug("Comparing $currentVersion against $versionConstraint => $result");
+        $result = $parser->parseConstraints($versionConstraint)
+            ->matches($parser->parseConstraints($currentVersion));
+
+        $this->debug("Comparing $currentVersion against $versionConstraint => " . ($result ? 'ok' : 'ko'));
 
         return $result;
     }
