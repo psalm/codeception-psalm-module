@@ -10,7 +10,8 @@ use Codeception\Module as BaseModule;
 use Codeception\Module\Cli;
 use Codeception\Module\Filesystem;
 use Codeception\TestInterface;
-use Composer\Semver\Comparator;
+use Composer\InstalledVersions;
+use Composer\Semver\Semver;
 use Composer\Semver\VersionParser;
 use Muglug\PackageVersions\Versions as LegacyVersions;
 use PackageVersions\Versions;
@@ -21,7 +22,7 @@ use RuntimeException;
 
 class Module extends BaseModule
 {
-    /** @var array<string,string */
+    /** @var array<string,string> */
     private const VERSION_OPERATORS = [
         'newer than' => '>',
         'older than' => '<',
@@ -101,7 +102,7 @@ class Module extends BaseModule
      */
     public function runPsalmOn(string $filename, array $options = []): void
     {
-        $suppressProgress = $this->seePsalmVersionIs('>=', '3.4.0');
+        $suppressProgress = $this->packageSatisfiesVersionConstraint('vimeo/psalm', '>=3.4.0');
 
         $options = array_map('escapeshellarg', $options);
         $cmd = $this->config['psalm_path']
@@ -192,11 +193,11 @@ class Module extends BaseModule
         }
     }
 
-    public function seePsalmVersionIs(string $operator, string $version): bool
+    private function packageSatisfiesVersionConstraint(string $package, string $versionConstraint): bool
     {
-        $currentVersion = $this->getShortVersion('vimeo/psalm');
+        $currentVersion = $this->getShortVersion($package);
 
-        $this->debug(sprintf("Current version: %s", $currentVersion));
+        $this->debug(sprintf("Current version of %s : %s", $package, $currentVersion));
 
         // todo: move to init/construct/before?
         $parser = new VersionParser();
@@ -207,12 +208,20 @@ class Module extends BaseModule
             $currentVersion = '9999999-dev';
         }
 
-        $version = $parser->normalize($version);
+        $result = Semver::satisfies($currentVersion, $versionConstraint);
 
-        $result = Comparator::compare($currentVersion, $operator, $version);
-        $this->debug("Comparing $currentVersion $operator $version => $result");
+        $this->debug("Comparing $currentVersion against $versionConstraint => " . ($result ? 'ok' : 'ko'));
 
         return $result;
+    }
+
+    /**
+     * @deprecated
+     * This method is only to maintain the public API; please use `self::haveADependencySatisfied` instead.
+     */
+    public function seePsalmVersionIs(string $operator, string $version): bool
+    {
+        return $this->packageSatisfiesVersionConstraint('vimeo/psalm', $operator . $version);
     }
 
     /**
@@ -243,7 +252,7 @@ class Module extends BaseModule
 
     public function seePsalmHasTaintAnalysis(): bool
     {
-        $taintAnalysisAvailable = $this->seePsalmVersionIs('>=', '3.10.0');
+        $taintAnalysisAvailable = $this->packageSatisfiesVersionConstraint('vimeo/psalm', '>=3.10.0');
         return $taintAnalysisAvailable;
     }
 
@@ -330,7 +339,7 @@ class Module extends BaseModule
 
         $op = (string) self::VERSION_OPERATORS[$operator];
 
-        if (!$this->seePsalmVersionIs($op, $version)) {
+        if (!$this->packageSatisfiesVersionConstraint('vimeo/psalm', $op . $version)) {
             /** @psalm-suppress InternalClass */
             throw new SkippedTestError("This scenario requires Psalm $op $version because of $reason");
         }
@@ -407,6 +416,19 @@ class Module extends BaseModule
         $this->hasAutoload = true;
     }
 
+    /**
+     * @Given I have the :package package satisfying the :versionConstraint
+     */
+    public function haveADependencySatisfied(string $package, string $versionConstraint): void
+    {
+        if ($this->packageSatisfiesVersionConstraint($package, $versionConstraint)) {
+            return;
+        }
+
+        /** @psalm-suppress InternalClass */
+        throw new SkippedTestError("This scenario requires $package to match $versionConstraint");
+    }
+
     private function convertToRegexp(string $in): string
     {
         return '@' . str_replace('%', '.*', preg_quote($in, '@')) . '@';
@@ -452,7 +474,11 @@ class Module extends BaseModule
 
     private function getShortVersion(string $package): string
     {
-        if (class_exists(Versions::class)) {
+        /** @psalm-suppress DeprecatedClass Support of legacy code */
+        if (class_exists(InstalledVersions::class)) {
+            /** @psalm-suppress UndefinedClass Composer\InstalledVersions is undefined when using Composer 1.x */
+            return (string) InstalledVersions::getPrettyVersion($package);
+        } elseif (class_exists(Versions::class)) {
             /** @psalm-suppress UndefinedClass psalm 3.0 ignores class_exists check */
             $version = (string) Versions::getVersion($package);
         } elseif (class_exists(LegacyVersions::class)) {
