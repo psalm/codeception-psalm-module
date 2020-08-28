@@ -13,7 +13,6 @@ use Codeception\TestInterface;
 use Composer\InstalledVersions;
 use Composer\Semver\Semver;
 use Composer\Semver\VersionParser;
-use Muglug\PackageVersions\Versions as LegacyVersions;
 use PackageVersions\Versions;
 use PHPUnit\Framework\Assert;
 use Behat\Gherkin\Node\TableNode;
@@ -474,19 +473,17 @@ class Module extends BaseModule
 
     private function getShortVersion(string $package): string
     {
-        /** @psalm-suppress DeprecatedClass Support of legacy code */
+        /** @psalm-suppress DeprecatedClass Versions is marked deprecated for no good reason */
         if (class_exists(InstalledVersions::class)) {
             /** @psalm-suppress UndefinedClass Composer\InstalledVersions is undefined when using Composer 1.x */
             return (string) InstalledVersions::getPrettyVersion($package);
         } elseif (class_exists(Versions::class)) {
-            /** @psalm-suppress UndefinedClass psalm 3.0 ignores class_exists check */
+            /** @psalm-suppress ArgumentTypeCoercion Versions::getVersion() has too narrow a signature */
             $version = (string) Versions::getVersion($package);
-        } elseif (class_exists(LegacyVersions::class)) {
-            $version = (string) LegacyVersions::getVersion($package);
         } else {
             throw new RuntimeException(
-                'Neither muglug/package-versions-56 nor ocramius/package-version is available,'
-                . ' cannot determine versions'
+                'Cannot determine versions. Neither of composer:2+,'
+                . ' ocramius/package-version or composer/package-versions-deprecated are installed.'
             );
         }
 
