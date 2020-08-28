@@ -11,7 +11,7 @@ use Codeception\Module\Cli;
 use Codeception\Module\Filesystem;
 use Codeception\TestInterface;
 use Composer\InstalledVersions;
-use Composer\Semver\Comparator;
+use Composer\Semver\Semver;
 use Composer\Semver\VersionParser;
 use Muglug\PackageVersions\Versions as LegacyVersions;
 use PackageVersions\Versions;
@@ -208,8 +208,7 @@ class Module extends BaseModule
             $currentVersion = '9999999-dev';
         }
 
-        $result = $parser->parseConstraints($versionConstraint)
-            ->matches($parser->parseConstraints($currentVersion));
+        $result = Semver::satisfies($currentVersion, $versionConstraint);
 
         $this->debug("Comparing $currentVersion against $versionConstraint => " . ($result ? 'ok' : 'ko'));
 
