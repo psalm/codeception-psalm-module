@@ -16,6 +16,7 @@ use Composer\Semver\VersionParser;
 use PackageVersions\Versions;
 use PHPUnit\Framework\Assert;
 use Behat\Gherkin\Node\TableNode;
+use OutOfBoundsException;
 use PHPUnit\Framework\SkippedTestError;
 use RuntimeException;
 
@@ -194,7 +195,12 @@ class Module extends BaseModule
 
     private function packageSatisfiesVersionConstraint(string $package, string $versionConstraint): bool
     {
-        $currentVersion = $this->getShortVersion($package);
+        try {
+            $currentVersion = $this->getShortVersion($package);
+        } catch (OutOfBoundsException $ex) {
+            $this->debug(sprintf("Package %s is not installed", $package));
+            return false;
+        }
 
         $this->debug(sprintf("Current version of %s : %s", $package, $currentVersion));
 
