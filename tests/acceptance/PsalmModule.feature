@@ -245,6 +245,15 @@ Feature: Psalm module
     When I run Psalm
     Then I see no errors
 
+  Scenario: Skipping when dependency is unknown
+    Given I have the "mr-nobody/unknown-package" package satisfying the "^123.0"
+    And I have the following code
+      """
+      atan("zz");
+      """
+    When I run Psalm
+    Then I see no errors
+
   Scenario: Running when dependency is satisfied
     Given I have the "codeception/module-cli" package satisfying the "*"
     And I have the following code
