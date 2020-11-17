@@ -37,6 +37,19 @@ jobs:
                   restore-keys: |
                     ${{ runner.os }}-composer-
 
+            # the way cache keys are set up will always cause a cache miss
+            # but will restore the cache generated during the previous run
+            # based on partial match
+            - name: Retrieve Psalm's cache
+              uses: actions/cache@v2
+              with:
+                  # we really need a way for Psalm to tell where cache is located
+                  path: |
+                    ~/.cache/psalm
+                  key: ${{ runner.os }}-psalm-${{ github.sha }}
+                  restore-keys: |
+                    ${{ runner.os }}-psalm-
+
             - name: Install composer dependencies
               run: composer update --prefer-dist
               env:
