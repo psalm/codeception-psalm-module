@@ -160,7 +160,10 @@ class Module extends BaseModule
         }
 
         foreach ($this->errors as $i => $error) {
-            if ($error['type'] === $type && $this->messageMatches($message, $error['message'])) {
+            if (
+                $this->matches($type, $error['type'])
+                && $this->matches($message, $error['message'])
+            ) {
                 unset($this->errors[$i]);
                 return;
             }
@@ -169,7 +172,7 @@ class Module extends BaseModule
         Assert::fail("Didn't see [ $type $message ] in: \n" . $this->remainingErrors());
     }
 
-    private function messageMatches(string $expected, string $actual): bool
+    private function matches(string $expected, string $actual): bool
     {
         $regexpDelimiter = '/';
         if ($expected[0] === $regexpDelimiter && $expected[strlen($expected) - 1] === $regexpDelimiter) {
