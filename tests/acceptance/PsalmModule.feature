@@ -232,8 +232,8 @@ Feature: Psalm module
       """
     When I run Psalm with taint analysis
     Then I see these errors
-      | Type            | Message |
-      | TaintedInput    | /./     |
+      | Type        | Message |
+      | /Tainted.*/ | /./     |
     And I see no other errors
 
   Scenario: Skipping when dependency is not satisfied
