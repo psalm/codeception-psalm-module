@@ -345,7 +345,10 @@ class Module extends BaseModule
             throw new TestRuntimeException("Unknown operator: $operator");
         }
 
-        /** @psalm-suppress RedundantCondition it's not redundant with older Psalm version */
+        /**
+         * @psalm-suppress RedundantCondition it's not redundant with older Psalm version
+         * @psalm-suppress RedundantCast
+         */
         $op = (string) self::VERSION_OPERATORS[$operator];
 
         if (!$this->packageSatisfiesVersionConstraint('vimeo/psalm', $op . $version)) {
@@ -491,6 +494,7 @@ class Module extends BaseModule
             /**
              * @psalm-suppress ArgumentTypeCoercion Versions::getVersion() has too narrow a signature
              * @psalm-suppress RedundantCondition not redundant with older Psalm
+             * @psalm-suppress RedundantCast
              */
             $version = (string) Versions::getVersion($package);
         } else {
