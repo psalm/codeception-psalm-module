@@ -322,7 +322,7 @@ class Module extends BaseModule
         $file = sprintf(
             '%s/%s.php',
             rtrim($this->config['default_dir'], '/'),
-            sha1($code)
+            sha1($this->preamble . $code)
         );
 
         $this->fs()->writeToFile(

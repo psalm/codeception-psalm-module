@@ -9,6 +9,8 @@ Feature: Psalm module
     <?php
 
     """
+    # Psalm enables cache when there's a composer.lock file
+    And I have empty composer.lock
 
   Scenario: Running with no errors
     Given I have the following code
@@ -22,7 +24,7 @@ Feature: Psalm module
   Scenario: Running with errors
     Given I have the following code
       """
-      atan("asd");
+      atan("asdfg");
       """
     When I run Psalm
     Then I see these errors
@@ -35,7 +37,7 @@ Feature: Psalm module
     Given I have Psalm newer than "999.99" (because of "me wanting to see if it skips")
     And I have the following code
       """
-      atan(1.);
+      atan(1.9);
       """
     When I run Psalm
     Then I see no errors
@@ -44,7 +46,7 @@ Feature: Psalm module
     Given I have Psalm older than "999.99" (because of "me wanting to see if it runs")
     And I have the following code
       """
-      atan("zz");
+      atan("zzzzzzz");
       """
     When I run Psalm
     Then I see these errors
@@ -55,7 +57,7 @@ Feature: Psalm module
   Scenario: Running Psalm with dead code detection
     Given I have the following code
       """
-      class C {
+      class CD {
         /** @return void */
         private function m(int $p) {}
       }
@@ -64,7 +66,7 @@ Feature: Psalm module
     Then I see these errors
       | Type         | Message                                     |
       | UnusedParam  | Param $p is never referenced in this method |
-      | UnusedClass  | Class C is never used                       |
+      | UnusedClass  | Class CD is never used                      |
     And I see no other errors
 
   Scenario: Running Psalm with custom config
@@ -82,7 +84,7 @@ Feature: Psalm module
       """
     And I have the following code
       """
-      atan("asd");
+      atan("asdzzz");
       """
     When I run Psalm
     Then I see no errors
@@ -158,7 +160,7 @@ Feature: Psalm module
   Scenario: Using regexps to match error messages
     Given I have the following code
       """
-      class C extends PPP {}
+      class CCC extends PPP {}
       """
     When I run Psalm
     Then I see these errors
@@ -169,7 +171,7 @@ Feature: Psalm module
   Scenario: Escaping pipes in regexps
     Given I have the following code
       """
-      class C extends PPP {}
+      class CC extends PPP {}
       """
     When I run Psalm
     Then I see these errors
@@ -210,7 +212,7 @@ Feature: Psalm module
     Given I have Psalm newer than "3.7.2" (because of "exit code changed in 3.8.0")
     And I have the following code in "autoload.php"
       """
-      <?php missing_function();
+      <?php missing_function_2();
       """
     And I have the following config
       """
@@ -240,7 +242,7 @@ Feature: Psalm module
     Given I have the "codeception/module-cli" package satisfying the "^123.0"
     And I have the following code
       """
-      atan("zz");
+      atan("zzzz");
       """
     When I run Psalm
     Then I see no errors
@@ -249,7 +251,7 @@ Feature: Psalm module
     Given I have the "mr-nobody/unknown-package" package satisfying the "^123.0"
     And I have the following code
       """
-      atan("zz");
+      atan("zzz");
       """
     When I run Psalm
     Then I see no errors
