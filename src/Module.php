@@ -48,7 +48,6 @@ class Module extends BaseModule
     /** @var array<string,string> */
     protected $config = [
         'psalm_path' => 'vendor/bin/psalm',
-        'default_file' => 'somefile.php',
         'default_dir' => 'tests/_run/',
     ];
 
@@ -320,7 +319,12 @@ class Module extends BaseModule
      */
     public function haveTheFollowingCode(string $code): void
     {
-        $file = rtrim($this->config['default_dir'], '/') . '/' . $this->config['default_file'];
+        $file = sprintf(
+            '%s/%s.php',
+            rtrim($this->config['default_dir'], '/'),
+            sha1($code)
+        );
+
         $this->fs()->writeToFile(
             $file,
             $this->preamble . $code
