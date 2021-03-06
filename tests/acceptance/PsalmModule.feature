@@ -21,17 +21,31 @@ Feature: Psalm module
     Then I see no errors
     And I see exit code 0
 
-  Scenario: Running with errors
+  Scenario: Running with errors (before 4.5.0)
+    Given I have Psalm older than "4.5.0" (because of "changed exit codes")
     Given I have the following code
       """
       atan("asdfg");
       """
     When I run Psalm
     Then I see these errors
-      | Type                  | Message                                            |
-      | InvalidScalarArgument | Argument 1 of atan expects float, string% provided |
+      | Type                  | Message                                                                         |
+      | InvalidScalarArgument | /Argument 1 of atan expects float, (string\|string\(asdfg\)\|"asdfg") provided/ |
     And I see no other errors
     And I see exit code 1
+
+  Scenario: Running with errors (since 4.5.0)
+    Given I have Psalm newer than "4.4.999" (because of "changed exit codes")
+    Given I have the following code
+      """
+      atan("asdfg");
+      """
+    When I run Psalm
+    Then I see these errors
+      | Type                  | Message                                                                         |
+      | InvalidScalarArgument | /Argument 1 of atan expects float, (string\|string\(asdfg\)\|"asdfg") provided/ |
+    And I see no other errors
+    And I see exit code 2
 
   Scenario: Skipping depending on a certain Psalm version
     Given I have Psalm newer than "999.99" (because of "me wanting to see if it skips")
