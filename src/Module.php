@@ -45,7 +45,10 @@ class Module extends BaseModule
      */
     private $fs;
 
-    /** @var array<string,string> */
+    /**
+     * @var array<string,string>
+     * @psalm-suppress NonInvariantDocblockPropertyType
+     */
     protected $config = [
         'psalm_path' => 'vendor/bin/psalm',
         'default_dir' => 'tests/_run/',
@@ -69,7 +72,7 @@ class Module extends BaseModule
     /** @var ?string */
     protected $output = null;
 
-    public function _beforeSuite($configuration = []): void
+    public function _beforeSuite($settings = []): void
     {
         $defaultDir = $this->config['default_dir'];
         if (file_exists($defaultDir)) {
