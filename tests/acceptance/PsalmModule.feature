@@ -7,7 +7,7 @@ Feature: Psalm module
     Given I have the following code preamble
     """
     <?php
-
+    function takesFloat(float $_f): void {}
     """
     # Psalm enables cache when there's a composer.lock file
     And I have empty composer.lock
@@ -15,7 +15,7 @@ Feature: Psalm module
   Scenario: Running with no errors
     Given I have the following code
       """
-      atan(1.1);
+      takesFloat(1.1);
       """
     When I run Psalm
     Then I see no errors
@@ -25,12 +25,12 @@ Feature: Psalm module
     Given I have Psalm older than "4.5.0" (because of "changed exit codes")
     Given I have the following code
       """
-      atan("asdfg");
+      takesFloat("asdfg");
       """
     When I run Psalm
     Then I see these errors
-      | Type                  | Message                                                                         |
-      | InvalidScalarArgument | /Argument 1 of atan expects float, (string\|string\(asdfg\)\|"asdfg") provided/ |
+      | Type                  | Message                                                                               |
+      | InvalidScalarArgument | /Argument 1 of takesFloat expects float, (string\|string\(asdfg\)\|"asdfg") provided/ |
     And I see no other errors
     And I see exit code 1
 
@@ -38,12 +38,12 @@ Feature: Psalm module
     Given I have Psalm newer than "4.4.999" (because of "changed exit codes")
     Given I have the following code
       """
-      atan("asdfg");
+      takesFloat("asdfg");
       """
     When I run Psalm
     Then I see these errors
-      | Type                  | Message                                                                         |
-      | InvalidScalarArgument | /Argument 1 of atan expects float, (string\|string\(asdfg\)\|"asdfg") provided/ |
+      | Type                  | Message                                                                               |
+      | InvalidScalarArgument | /Argument 1 of takesFloat expects float, (string\|string\(asdfg\)\|"asdfg") provided/ |
     And I see no other errors
     And I see exit code 2
 
@@ -51,7 +51,7 @@ Feature: Psalm module
     Given I have Psalm newer than "999.99" (because of "me wanting to see if it skips")
     And I have the following code
       """
-      atan(1.9);
+      takesFloat(1.9);
       """
     When I run Psalm
     Then I see no errors
@@ -60,7 +60,7 @@ Feature: Psalm module
     Given I have Psalm older than "999.99" (because of "me wanting to see if it runs")
     And I have the following code
       """
-      atan("zzzzzzz");
+      takesFloat("zzzzzzz");
       """
     When I run Psalm
     Then I see these errors
@@ -98,7 +98,7 @@ Feature: Psalm module
       """
     And I have the following code
       """
-      atan("asdzzz");
+      takesFloat("asdzzz");
       """
     When I run Psalm
     Then I see no errors
@@ -130,8 +130,8 @@ Feature: Psalm module
       """
     When I run Psalm on "C.php"
     Then I see these errors
-      | Type           | Message                               |
-      | UndefinedClass | Class or interface PPP does not exist |
+      | Type           | Message              |
+      | UndefinedClass | /PPP does not exist/ |
 
   Scenario: Running psalm on an individual file with autoloader
     Given I have the following code in "C.php"
@@ -256,7 +256,7 @@ Feature: Psalm module
     Given I have the "codeception/module-cli" package satisfying the "^123.0"
     And I have the following code
       """
-      atan("zzzz");
+      takesFloat("zzzz");
       """
     When I run Psalm
     Then I see no errors
@@ -265,7 +265,7 @@ Feature: Psalm module
     Given I have the "mr-nobody/unknown-package" package satisfying the "^123.0"
     And I have the following code
       """
-      atan("zzz");
+      takesFloat("zzz");
       """
     When I run Psalm
     Then I see no errors
@@ -274,7 +274,7 @@ Feature: Psalm module
     Given I have the "codeception/module-cli" package satisfying the "*"
     And I have the following code
       """
-      atan("zz");
+      takesFloat("zz");
       """
     When I run Psalm
     Then I see these errors
