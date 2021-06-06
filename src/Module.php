@@ -273,7 +273,7 @@ class Module extends BaseModule
     public function havePsalmWithTaintAnalysis(): void
     {
         if (!$this->seePsalmHasTaintAnalysis()) {
-            /** @psalm-suppress InternalClass */
+            /** @psalm-suppress InternalClass,InternalMethod */
             throw new SkippedTestError("This scenario requires Psalm with taint analysis (3.10+)");
         }
     }
@@ -339,7 +339,7 @@ class Module extends BaseModule
      */
     public function haveSomeFuturePsalmThatSupportsThisFeature(string $ref): void
     {
-        /** @psalm-suppress InternalClass */
+        /** @psalm-suppress InternalClass,InternalMethod */
         throw new SkippedTestError("Future functionality that Psalm has yet to support: $ref");
     }
 
@@ -359,7 +359,7 @@ class Module extends BaseModule
         $op = (string) self::VERSION_OPERATORS[$operator];
 
         if (!$this->packageSatisfiesVersionConstraint('vimeo/psalm', $op . $version)) {
-            /** @psalm-suppress InternalClass */
+            /** @psalm-suppress InternalClass,InternalMethod */
             throw new SkippedTestError("This scenario requires Psalm $op $version because of $reason");
         }
     }
@@ -444,7 +444,7 @@ class Module extends BaseModule
             return;
         }
 
-        /** @psalm-suppress InternalClass */
+        /** @psalm-suppress InternalClass,InternalMethod */
         throw new SkippedTestError("This scenario requires $package to match $versionConstraint");
     }
 
