@@ -250,7 +250,6 @@ Feature: Psalm module
     Then I see these errors
       | Type        | Message |
       | /Tainted.*/ | /./     |
-    And I see no other errors
 
   Scenario: Skipping when dependency is not satisfied
     Given I have the "codeception/module-cli" package satisfying the "^123.0"
