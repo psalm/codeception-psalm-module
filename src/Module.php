@@ -19,6 +19,8 @@ use Behat\Gherkin\Node\TableNode;
 use OutOfBoundsException;
 use PHPUnit\Framework\SkippedTestError;
 use RuntimeException;
+use function file_exists;
+use function link;
 
 class Module extends BaseModule
 {
@@ -34,6 +36,8 @@ class Module extends BaseModule
         . "    <directory name=\".\"/>\n"
         . "  </projectFiles>\n"
         . "</psalm>\n";
+
+    private const UPSTREAM_COMPOSER_LOCK_PATH = __DIR__ . '/../../../../composer.lock';
 
     /**
      * @var ?Cli
@@ -96,6 +100,12 @@ class Module extends BaseModule
         $this->config['psalm_path'] = realpath($this->config['psalm_path']);
         $this->psalmConfig = '';
         $this->fs()->cleanDir($this->config['default_dir']);
+
+        if (file_exists(self::UPSTREAM_COMPOSER_LOCK_PATH)) {
+            $this->debug('Linking composer.lock to working directory.');
+            link(self::UPSTREAM_COMPOSER_LOCK_PATH, $this->config['default_dir'] . '/composer.lock');
+        }
+
         $this->preamble = '';
     }
 
