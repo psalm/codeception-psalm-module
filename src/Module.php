@@ -29,7 +29,7 @@ class Module extends BaseModule
     ];
 
     private const DEFAULT_PSALM_CONFIG = "<?xml version=\"1.0\"?>\n"
-        . "<psalm totallyTyped=\"true\" %s>\n"
+        . "<psalm errorLevel=\"1\" %s>\n"
         . "  <projectFiles>\n"
         . "    <directory name=\".\"/>\n"
         . "  </projectFiles>\n"
