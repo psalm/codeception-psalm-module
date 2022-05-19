@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Weirdan\Codeception\Psalm;
 
+use Behat\Gherkin\Node\PyStringNode;
+use Codeception\Exception\ConfigurationException;
 use Codeception\Exception\ModuleRequireException;
 use Codeception\Exception\TestRuntimeException;
+use Codeception\Lib\ModuleContainer;
 use Codeception\Module as BaseModule;
 use Codeception\Module\Cli;
 use Codeception\Module\Filesystem;
@@ -19,6 +22,11 @@ use Behat\Gherkin\Node\TableNode;
 use OutOfBoundsException;
 use PHPUnit\Framework\SkippedTestError;
 use RuntimeException;
+
+use function is_array;
+use function is_int;
+use function is_numeric;
+use function is_string;
 
 class Module extends BaseModule
 {
@@ -35,46 +43,38 @@ class Module extends BaseModule
         . "  </projectFiles>\n"
         . "</psalm>\n";
 
-    /**
-     * @var ?Cli
-     */
-    private $cli;
-
-    /**
-     * @var ?Filesystem
-     */
-    private $fs;
-
-    /**
-     * @var array<string,string>
-     * @psalm-suppress NonInvariantDocblockPropertyType
-     */
-    protected $config = [
+    private const DEFAULT_MODULE_CONFIGURATION = [
         'psalm_path' => 'vendor/bin/psalm',
         'default_dir' => 'tests/_run/',
     ];
 
-    /** @var string */
-    private $psalmConfig = '';
+    private ?Cli $cli = null;
 
-    /** @var string */
-    private $preamble = '';
+    private ?Filesystem $fs = null;
+
+    private string $psalmConfig = '';
+
+    private string $preamble = '';
 
     /** @var ?array<int, array{type:string,message:string}> */
-    private $errors = null;
+    private ?array $errors = null;
 
-    /** @var bool */
-    private $hasAutoload = false;
+    private bool $hasAutoload = false;
 
-    /** @var ?int */
-    private $exitCode = null;
+    private ?int $exitCode = null;
 
-    /** @var ?string */
-    protected $output = null;
+    protected ?string $output = null;
+
+    public function __construct(ModuleContainer $moduleContainer, ?array $config = null)
+    {
+        assert(is_array($this->config));
+        $this->config = array_merge(self::DEFAULT_MODULE_CONFIGURATION, $this->config);
+        parent::__construct($moduleContainer, $config);
+    }
 
     public function _beforeSuite($settings = []): void
     {
-        $defaultDir = $this->config['default_dir'];
+        $defaultDir = $this->getDefaultDirectory();
         if (file_exists($defaultDir)) {
             if (is_dir($defaultDir)) {
                 return;
@@ -93,9 +93,12 @@ class Module extends BaseModule
         $this->errors = null;
         $this->output = null;
         $this->exitCode = null;
-        $this->config['psalm_path'] = realpath($this->config['psalm_path']);
+        assert(is_array($this->config));
+        $path = $this->config['psalm_path'];
+        assert(is_string($path));
+        $this->config['psalm_path'] = realpath($path);
         $this->psalmConfig = '';
-        $this->fs()->cleanDir($this->config['default_dir']);
+        $this->fs()->cleanDir($this->getDefaultDirectory());
         $this->preamble = '';
     }
 
@@ -107,7 +110,7 @@ class Module extends BaseModule
         $suppressProgress = $this->packageSatisfiesVersionConstraint('vimeo/psalm', '>=3.4.0');
 
         $options = array_map('escapeshellarg', $options);
-        $cmd = $this->config['psalm_path']
+        $cmd = $this->getPsalmPath()
                 . ' --output-format=json '
                 . ($suppressProgress ? ' --no-progress ' : ' ')
                 . join(' ', $options) . ' '
@@ -143,10 +146,17 @@ class Module extends BaseModule
     }
 
     /**
+     * @param int|string $exitCode
      * @Then I see exit code :code
      */
-    public function seeExitCode(int $exitCode): void
+    public function seeExitCode($exitCode): void
     {
+        if (!is_int($exitCode) && !is_numeric($exitCode)) {
+            throw new ConfigurationException('Feature configuration contains invalid exit code expectation.');
+        }
+
+        $exitCode = (int) $exitCode;
+
         if ($this->exitCode === $exitCode) {
             return;
         }
@@ -235,11 +245,13 @@ class Module extends BaseModule
     }
 
     /**
+     * @param string|PyStringNode $code
+     *
      * @Given I have the following code preamble :code
      */
-    public function haveTheFollowingCodePreamble(string $code): void
+    public function haveTheFollowingCodePreamble($code): void
     {
-        $this->preamble = $code;
+        $this->preamble = (string) $code;
     }
 
     /**
@@ -248,7 +260,7 @@ class Module extends BaseModule
      */
     public function runPsalm(): void
     {
-        $this->runPsalmIn($this->config['default_dir']);
+        $this->runPsalmIn($this->getDefaultDirectory());
     }
 
     /**
@@ -257,7 +269,7 @@ class Module extends BaseModule
      */
     public function runPsalmWithDeadCodeDetection(): void
     {
-        $this->runPsalmIn($this->config['default_dir'], ['--find-dead-code']);
+        $this->runPsalmIn($this->getDefaultDirectory(), ['--find-dead-code']);
     }
 
     public function seePsalmHasTaintAnalysis(): bool
@@ -287,7 +299,7 @@ class Module extends BaseModule
         if (!$this->seePsalmHasTaintAnalysis()) {
             Assert::fail('Taint analysis is available since 3.10.0');
         }
-        $this->runPsalmIn($this->config['default_dir'], ['--track-tainted-input']);
+        $this->runPsalmIn($this->getDefaultDirectory(), ['--track-tainted-input']);
     }
 
     /**
@@ -297,7 +309,7 @@ class Module extends BaseModule
     public function runPsalmOnASingleFile(string $file): void
     {
         $pwd = getcwd();
-        $this->fs()->amInPath($this->config['default_dir']);
+        $this->fs()->amInPath($this->getDefaultDirectory());
 
         $config = $this->psalmConfig ?: self::DEFAULT_PSALM_CONFIG;
         $config = sprintf($config, $this->hasAutoload ? 'autoloader="autoload.php"' : '');
@@ -310,21 +322,23 @@ class Module extends BaseModule
 
 
     /**
+     * @param string|PyStringNode $config
      * @Given I have the following config :config
      */
-    public function haveTheFollowingConfig(string $config): void
+    public function haveTheFollowingConfig($config): void
     {
-        $this->psalmConfig = $config;
+        $this->psalmConfig = (string) $config;
     }
 
     /**
+     * @param string|PyStringNode $code
      * @Given I have the following code :code
      */
-    public function haveTheFollowingCode(string $code): void
+    public function haveTheFollowingCode($code): void
     {
         $file = sprintf(
             '%s/%s.php',
-            rtrim($this->config['default_dir'], '/'),
+            rtrim($this->getDefaultDirectory(), '/'),
             sha1($this->preamble . $code)
         );
 
@@ -380,12 +394,13 @@ class Module extends BaseModule
     }
 
     /**
+     * @param string|PyStringNode $code
      * @Given I have the following code in :arg1 :arg2
      */
-    public function haveTheFollowingCodeIn(string $filename, string $code): void
+    public function haveTheFollowingCodeIn(string $filename, $code): void
     {
-        $file = rtrim($this->config['default_dir'], '/') . '/' . $filename;
-        $this->fs()->writeToFile($file, $code);
+        $file = rtrim($this->getDefaultDirectory(), '/') . '/' . $filename;
+        $this->fs()->writeToFile($file, (string) $code);
     }
 
     /**
@@ -430,7 +445,7 @@ class Module extends BaseModule
                 )
             )
         );
-        $file = rtrim($this->config['default_dir'], '/') . '/' . 'autoload.php';
+        $file = rtrim($this->getDefaultDirectory(), '/') . '/' . 'autoload.php';
         $this->fs()->writeToFile($file, $code);
         $this->hasAutoload = true;
     }
@@ -549,5 +564,23 @@ class Module extends BaseModule
             array_values((array)$errors)
         );
         $this->debug($this->remainingErrors());
+    }
+
+    private function getDefaultDirectory(): string
+    {
+        assert(is_array($this->config));
+        $directory = $this->config['default_dir'];
+        assert(is_string($directory));
+
+        return $directory;
+    }
+
+    private function getPsalmPath(): string
+    {
+        assert(is_array($this->config));
+        $psalmPath = $this->config['psalm_path'];
+        assert(is_string($psalmPath));
+
+        return $psalmPath;
     }
 }
