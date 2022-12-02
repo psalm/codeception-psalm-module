@@ -29,8 +29,8 @@ Feature: Psalm module
       """
     When I run Psalm
     Then I see these errors
-      | Type                  | Message                                                                               |
-      | InvalidScalarArgument | /Argument 1 of takesFloat expects float, (string\|string\(asdfg\)\|"asdfg") provided/ |
+      | Type                  | Message                                                                                        |
+      | InvalidScalarArgument | /Argument 1 of takesFloat expects float, (string\|string\(asdfg\)\|"asdfg"\|'asdfg') provided/ |
     And I see no other errors
     And I see exit code 1
 
@@ -42,8 +42,8 @@ Feature: Psalm module
       """
     When I run Psalm
     Then I see these errors
-      | Type                  | Message                                                                               |
-      | InvalidScalarArgument | /Argument 1 of takesFloat expects float, (string\|string\(asdfg\)\|"asdfg") provided/ |
+      | Type                  | Message                                                                                               |
+      | InvalidScalarArgument | /Argument 1 of takesFloat expects float, (but )?(string\|string\(asdfg\)\|"asdfg"\|'asdfg') provided/ |
     And I see no other errors
     And I see exit code 2
 
