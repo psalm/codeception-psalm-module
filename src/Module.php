@@ -67,11 +67,13 @@ class Module extends BaseModule
 
     public function __construct(ModuleContainer $moduleContainer, ?array $config = null)
     {
+        /** @psalm-suppress RedundantCondition required for older codeception versions */
         assert(is_array($this->config));
         $this->config = array_merge(self::DEFAULT_MODULE_CONFIGURATION, $this->config);
         parent::__construct($moduleContainer, $config);
     }
 
+    /** @param mixed $settings */
     public function _beforeSuite($settings = []): void
     {
         $defaultDir = $this->getDefaultDirectory();
@@ -93,6 +95,7 @@ class Module extends BaseModule
         $this->errors = null;
         $this->output = null;
         $this->exitCode = null;
+        /** @psalm-suppress RedundantCondition required for older codeception versions */
         assert(is_array($this->config));
         $path = $this->config['psalm_path'];
         assert(is_string($path));
@@ -119,9 +122,16 @@ class Module extends BaseModule
         $this->debug('Running: ' . $cmd);
         $this->cli()->runShellCommand($cmd, false);
 
-        /** @psalm-suppress MissingPropertyType shouldn't be required, but older Psalm needs it */
+        /**
+         * @psalm-suppress MissingPropertyType shouldn't be required, but older Psalm needs it
+         * @psalm-suppress RedundantCast required for older codeception versions
+         */
         $this->output = (string)$this->cli()->output;
-        /** @psalm-suppress MissingPropertyType shouldn't be required, but older Psalm needs it */
+
+        /**
+         * @psalm-suppress MissingPropertyType shouldn't be required, but older Psalm needs it
+         * @psalm-suppress RedundantCast required for older codeception versions
+         */
         $this->exitCode = (int)$this->cli()->result;
 
         $this->debug(sprintf('Psalm exit code: %d', $this->exitCode));
@@ -568,6 +578,7 @@ class Module extends BaseModule
 
     private function getDefaultDirectory(): string
     {
+        /** @psalm-suppress RedundantCondition required for older codeception versions */
         assert(is_array($this->config));
         $directory = $this->config['default_dir'];
         assert(is_string($directory));
@@ -577,6 +588,7 @@ class Module extends BaseModule
 
     private function getPsalmPath(): string
     {
+        /** @psalm-suppress RedundantCondition required for older codeception versions */
         assert(is_array($this->config));
         $psalmPath = $this->config['psalm_path'];
         assert(is_string($psalmPath));

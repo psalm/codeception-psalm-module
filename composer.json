@@ -20,7 +20,7 @@
         "ext-json": "*",
         "codeception/codeception": "^4.1.31 || ^5.0",
         "composer/semver": "^1.4 || ^2.0 || ^3.0",
-        "codeception/module-cli": "^1.0.0",
+        "codeception/module-cli": "^1.0.0 || ^2.0.0",
         "codeception/module-filesystem": "^1.0.2 || ^2.0 || ^3.0"
     },
     "require-dev": {
