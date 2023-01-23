@@ -11,3 +11,10 @@ updates:
       interval: "weekly"
       day: "friday"
     versioning-strategy: "widen"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      timezone: 05:00 UTC
+      interval: weekly
+      day: friday
