@@ -5,29 +5,32 @@ declare(strict_types=1);
 namespace Weirdan\Codeception\Psalm;
 
 use Behat\Gherkin\Node\PyStringNode;
+use Behat\Gherkin\Node\TableNode;
 use Codeception\Exception\ConfigurationException;
 use Codeception\Exception\ModuleRequireException;
 use Codeception\Exception\TestRuntimeException;
 use Codeception\Lib\ModuleContainer;
 use Codeception\Module as BaseModule;
-use Codeception\Module\Cli;
 use Codeception\Module\Filesystem;
 use Codeception\TestInterface;
 use Composer\InstalledVersions;
 use Composer\Semver\Semver;
 use Composer\Semver\VersionParser;
+use OutOfBoundsException;
 use PackageVersions\Versions;
 use PHPUnit\Framework\Assert;
-use Behat\Gherkin\Node\TableNode;
-use OutOfBoundsException;
 use PHPUnit\Framework\SkippedTestError;
 use RuntimeException;
+use Symfony\Component\Process\Process;
 
 use function is_array;
 use function is_int;
 use function is_numeric;
 use function is_string;
 
+/**
+ * @psalm-suppress UnusedClass
+ */
 class Module extends BaseModule
 {
     /** @var array<string,string> */
@@ -48,8 +51,6 @@ class Module extends BaseModule
         'default_dir' => 'tests/_run/',
     ];
 
-    private ?Cli $cli = null;
-
     private ?Filesystem $fs = null;
 
     private string $psalmConfig = '';
@@ -64,6 +65,8 @@ class Module extends BaseModule
     private ?int $exitCode = null;
 
     protected ?string $output = null;
+
+    protected ?string $errorOutput = null;
 
     public function __construct(ModuleContainer $moduleContainer, ?array $config = null)
     {
@@ -94,6 +97,7 @@ class Module extends BaseModule
         $this->hasAutoload = false;
         $this->errors = null;
         $this->output = null;
+        $this->errorOutput = null;
         $this->exitCode = null;
         /** @psalm-suppress RedundantCondition required for older codeception versions */
         assert(is_array($this->config));
@@ -112,30 +116,22 @@ class Module extends BaseModule
     {
         $suppressProgress = $this->packageSatisfiesVersionConstraint('vimeo/psalm', '>=3.4.0');
 
-        $options = array_map('escapeshellarg', $options);
-        $cmd = $this->getPsalmPath()
-                . ' --output-format=json '
-                . ($suppressProgress ? ' --no-progress ' : ' ')
-                . join(' ', $options) . ' '
-                . ($filename ? escapeshellarg($filename) : '')
-                . ' 2>&1';
-        $this->debug('Running: ' . $cmd);
-        $this->cli()->runShellCommand($cmd, false);
+        $cmd = [$this->getPsalmPath(), '--output-format=json'];
+        if ($suppressProgress) {
+            $cmd[] = '--no-progress';
+        }
+        $cmd = \array_merge($cmd, $options);
+        if ($filename) {
+            $cmd[] = $filename;
+        }
 
-        /**
-         * @psalm-suppress MissingPropertyType shouldn't be required, but older Psalm needs it
-         * @psalm-suppress RedundantCast required for older codeception versions
-         */
-        $this->output = (string)$this->cli()->output;
-
-        /**
-         * @psalm-suppress MissingPropertyType shouldn't be required, but older Psalm needs it
-         * @psalm-suppress RedundantCast required for older codeception versions
-         */
-        $this->exitCode = (int)$this->cli()->result;
-
-        $this->debug(sprintf('Psalm exit code: %d', $this->exitCode));
-        // $this->debug('Psalm output: ' . $this->output);
+        $process = new Process($cmd);
+        $this->debug("Running: {$process->getCommandLine()}");
+        $this->exitCode = $process->run();
+        $this->debug("Psalm exit code: {$this->exitCode}");
+        $this->output = $process->getOutput();
+        $this->errorOutput = $process->getErrorOutput();
+        $this->debug("Error output: {$this->errorOutput}");
     }
 
     /**
@@ -476,18 +472,6 @@ class Module extends BaseModule
     private function convertToRegexp(string $in): string
     {
         return '@' . str_replace('%', '.*', preg_quote($in, '@')) . '@';
-    }
-
-    private function cli(): Cli
-    {
-        if (null === $this->cli) {
-            $cli = $this->getModule('Cli');
-            if (!$cli instanceof Cli) {
-                throw new ModuleRequireException($this, 'Needs Cli module');
-            }
-            $this->cli = $cli;
-        }
-        return $this->cli;
     }
 
     private function fs(): Filesystem
