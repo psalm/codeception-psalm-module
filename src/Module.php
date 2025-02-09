@@ -111,7 +111,7 @@ class Module extends BaseModule
      */
     public function runPsalmOn(string $filename, array $options = []): void
     {
-        $suppressProgress = $this->packageSatisfiesVersionConstraint('vimeo/psalm', '>=3.4.0');
+        $suppressProgress = !$this->packageSatisfiesVersionConstraint('vimeo/psalm', '<3.4.0');
 
         $options = array_map('escapeshellarg', $options);
         $cmd = $this->getPsalmPath()
