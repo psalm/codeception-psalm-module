@@ -28,6 +28,7 @@ use function is_int;
 use function is_numeric;
 use function is_string;
 
+/** @api */
 class Module extends BaseModule
 {
     /** @var array<string,string> */
@@ -144,6 +145,10 @@ class Module extends BaseModule
     public function runPsalmIn(string $dir, array $options = []): void
     {
         $pwd = getcwd();
+        if (false === $pwd) {
+            throw new TestRuntimeException('Failed to get current working directory');
+        }
+
         $this->fs()->amInPath($dir);
 
         $config = $this->psalmConfig ?: self::DEFAULT_PSALM_CONFIG;
@@ -197,7 +202,11 @@ class Module extends BaseModule
     private function matches(string $expected, string $actual): bool
     {
         $regexpDelimiter = '/';
-        if ($expected[0] === $regexpDelimiter && $expected[strlen($expected) - 1] === $regexpDelimiter) {
+        if (
+            $expected !== ''
+            && $expected[0] === $regexpDelimiter
+            && $expected[strlen($expected) - 1] === $regexpDelimiter
+        ) {
             $regexp = $expected;
         } else {
             $regexp = $this->convertToRegexp($expected);
@@ -319,6 +328,10 @@ class Module extends BaseModule
     public function runPsalmOnASingleFile(string $file): void
     {
         $pwd = getcwd();
+        if (false === $pwd) {
+            throw new TestRuntimeException('Failed to get current working directory');
+        }
+
         $this->fs()->amInPath($this->getDefaultDirectory());
 
         $config = $this->psalmConfig ?: self::DEFAULT_PSALM_CONFIG;
@@ -473,6 +486,7 @@ class Module extends BaseModule
         throw new SkippedTestError("This scenario requires $package to match $versionConstraint");
     }
 
+    /** @return non-empty-string */
     private function convertToRegexp(string $in): string
     {
         return '@' . str_replace('%', '.*', preg_quote($in, '@')) . '@';
@@ -552,7 +566,7 @@ class Module extends BaseModule
             return;
         }
 
-        if (empty($this->output)) {
+        if ($this->output === null || $this->output === '') {
             $this->errors = [];
             return;
         }
