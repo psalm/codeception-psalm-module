@@ -78,9 +78,9 @@ Feature: Psalm module
       """
     When I run Psalm with dead code detection
     Then I see these errors
-      | Type         | Message                                     |
-      | UnusedParam  | Param $p is never referenced in this method |
-      | UnusedClass  | Class CD is never used                      |
+      | Type         | Message                                         |
+      | UnusedParam  | /Param \$?p is never referenced in this method/ |
+      | UnusedClass  | Class CD is never used                          |
     And I see no other errors
 
   Scenario: Running Psalm with custom config
@@ -174,6 +174,7 @@ Feature: Psalm module
   Scenario: Using regexps to match error messages
     Given I have the following code
       """
+      /** @api */
       class CCC extends PPP {}
       """
     When I run Psalm
@@ -185,6 +186,7 @@ Feature: Psalm module
   Scenario: Escaping pipes in regexps
     Given I have the following code
       """
+      /** @api */
       class CC extends PPP {}
       """
     When I run Psalm
@@ -196,6 +198,7 @@ Feature: Psalm module
   Scenario: Using backslashes in regexps
     Given I have the following code
       """
+      /** @api */
       class C extends PPP {}
       """
     When I run Psalm
