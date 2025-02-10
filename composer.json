@@ -25,7 +25,7 @@
     },
     "require-dev": {
         "squizlabs/php_codesniffer": "^3.4",
-        "vimeo/psalm": "^5.0.0 || ^6.0.0 || dev-master",
+        "vimeo/psalm": "^5.0.0 || ^6.5.1 || dev-master",
         "phpunit/phpunit": "^9.5.20",
         "codeception/codeception": "^4.1.31 || ^5.0.0-rc3"
     },
