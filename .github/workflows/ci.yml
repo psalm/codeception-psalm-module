@@ -106,6 +106,10 @@ jobs:
             matrix:
                 php: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
                 deps: ['high', 'low', 'stable']
+                exclude:
+                    # the lowest Psalm versions crash on PHP 8.4
+                    - php: '8.4'
+                      deps: 'low'
             fail-fast: false
         steps:
             - name: Checkout
