@@ -20,7 +20,6 @@ use PackageVersions\Versions;
 use PHPUnit\Framework\Assert;
 use Behat\Gherkin\Node\TableNode;
 use OutOfBoundsException;
-use PHPUnit\Framework\SkippedTestError;
 use RuntimeException;
 
 use function is_array;
@@ -172,31 +171,27 @@ class Module extends BaseModule
 
         $exitCode = (int) $exitCode;
 
-        if ($this->exitCode === $exitCode) {
-            return;
-        }
-
-        Assert::fail("Expected exit code {$exitCode}, got {$this->exitCode}");
+        Assert::assertSame($exitCode, $this->exitCode, "Expected exit code {$exitCode}, got {$this->exitCode}");
     }
 
     public function seeThisError(string $type, string $message): void
     {
         $this->parseErrors();
-        if (empty($this->errors)) {
-            Assert::fail("No errors");
-        }
+        Assert::assertNotEmpty($this->errors, "No errors");
 
+        $matching = null;
         foreach ($this->errors as $i => $error) {
             if (
                 $this->matches($type, $error['type'])
                 && $this->matches($message, $error['message'])
             ) {
-                unset($this->errors[$i]);
-                return;
+                $matching = $i;
+                break;
             }
         }
 
-        Assert::fail("Didn't see [ $type $message ] in: \n" . $this->remainingErrors());
+        Assert::assertNotNull($matching, "Didn't see [ $type $message ] in: \n" . $this->remainingErrors());
+        unset($this->errors[$matching]);
     }
 
     private function matches(string $expected, string $actual): bool
@@ -222,9 +217,7 @@ class Module extends BaseModule
     public function seeNoErrors(): void
     {
         $this->parseErrors();
-        if (!empty($this->errors)) {
-            Assert::fail("There were errors: \n" . $this->remainingErrors());
-        }
+        Assert::assertEmpty($this->errors, "There were errors: \n" . $this->remainingErrors());
     }
 
     private function packageSatisfiesVersionConstraint(string $package, string $versionConstraint): bool
@@ -304,8 +297,7 @@ class Module extends BaseModule
     public function havePsalmWithTaintAnalysis(): void
     {
         if (!$this->seePsalmHasTaintAnalysis()) {
-            /** @psalm-suppress InternalClass,InternalMethod */
-            throw new SkippedTestError("This scenario requires Psalm with taint analysis (3.10+)");
+            Assert::markTestSkipped("This scenario requires Psalm with taint analysis (3.10+)");
         }
     }
 
@@ -376,8 +368,7 @@ class Module extends BaseModule
      */
     public function haveSomeFuturePsalmThatSupportsThisFeature(string $ref): void
     {
-        /** @psalm-suppress InternalClass,InternalMethod */
-        throw new SkippedTestError("Future functionality that Psalm has yet to support: $ref");
+        Assert::markTestSkipped("Future functionality that Psalm has yet to support: $ref");
     }
 
     /**
@@ -396,8 +387,7 @@ class Module extends BaseModule
         $op = (string) self::VERSION_OPERATORS[$operator];
 
         if (!$this->packageSatisfiesVersionConstraint('vimeo/psalm', $op . $version)) {
-            /** @psalm-suppress InternalClass,InternalMethod */
-            throw new SkippedTestError("This scenario requires Psalm $op $version because of $reason");
+            Assert::markTestSkipped("This scenario requires Psalm $op $version because of $reason");
         }
     }
 
@@ -482,8 +472,7 @@ class Module extends BaseModule
             return;
         }
 
-        /** @psalm-suppress InternalClass,InternalMethod */
-        throw new SkippedTestError("This scenario requires $package to match $versionConstraint");
+        Assert::markTestSkipped("This scenario requires $package to match $versionConstraint");
     }
 
     /** @return non-empty-string */
