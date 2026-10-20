@@ -7,7 +7,7 @@ Feature: Psalm module
     Given I have the following code preamble
     """
     <?php
-    function takesFloat(float $_f): void {}
+    function takesFloat(float $f): void { echo $f; }
     """
     # Psalm enables cache when there's a composer.lock file
     And I have empty composer.lock
@@ -71,9 +71,9 @@ Feature: Psalm module
   Scenario: Running Psalm with dead code detection
     Given I have the following code
       """
-      class CD {
+      final class CD {
         /** @return void */
-        private function m(int $p) {}
+        private function m(int $p) { echo "m"; }
       }
       """
     When I run Psalm with dead code detection
